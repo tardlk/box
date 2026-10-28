@@ -50,7 +50,7 @@ final class SiteParser {
             if (!picture.isEmpty()) picture = URI.create(base + "/").resolve(picture).toString();
             if (!SiteHttp.publicUrl(picture)) picture = "";
             videos.put(new JSONObject().put("vod_id", id).put("vod_name", title)
-                    .put("vod_pic", images.url(picture)).put("vod_remarks", card.select(".label, .rate, .rating").text()));
+                    .put("vod_pic", images.url(poster(picture))).put("vod_remarks", card.select(".label, .rate, .rating").text()));
         }
         String next = "";
         for (Element link : document.select(".page-more a[href]")) {
@@ -85,11 +85,24 @@ final class SiteParser {
         String people = metadata.size() > 4 ? metadata.get(4) : "";
         String[] credits = people.split("/", 2);
         return new JSONObject().put("vod_id", id).put("vod_name", title)
-                .put("vod_pic", images.url(picture)).put("vod_year", year)
+                .put("vod_pic", images.url(poster(picture))).put("vod_year", year)
                 .put("vod_area", metadata.size() > 3 ? metadata.get(3) : "")
                 .put("vod_director", credits.length > 1 ? credits[0] : "")
                 .put("vod_actor", credits.length > 1 ? credits[1] : people)
                 .put("vod_content", SiteHttp.join(" · ", metadata));
+    }
+
+    static String poster(String url) {
+        try {
+            URI uri = URI.create(url);
+            String host = uri.getHost();
+            // Some site cards still use Douban's retired poster size, which can return 403.
+            if (host != null && (host.equalsIgnoreCase("doubanio.com") || host.toLowerCase(java.util.Locale.ROOT).endsWith(".doubanio.com"))
+                    && uri.getRawPath().startsWith("/view/movie_poster_cover/lpst/public/")) {
+                return url.replace("/view/movie_poster_cover/lpst/public/", "/view/photo/s_ratio_poster/public/");
+            }
+        } catch (IllegalArgumentException ignored) { }
+        return url;
     }
 
     static String token(String id, String encoded) throws Exception {

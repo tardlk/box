@@ -28,6 +28,14 @@ public final class ContractTest {
         SiteParser.Page search = SiteParser.page("<div class='media'><a href='/play/22'><img alt='搜索样片'></a></div>"
                 + "<div class='page-more'><a href='/search?q=a&amp;p=2&amp;n=x%2By'>下一页</a></div>", true, value -> value);
         check(search.list.length() == 1 && search.next.contains("n=x%2By"), "搜索游标及编码保持原样");
+        String legacyPoster = "https://img1.doubanio.com/view/movie_poster_cover/lpst/public/p2186920269.jpg";
+        String currentPoster = "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2186920269.jpg";
+        String friends = "<div class='media'><a href='/play/390655'><img alt='老友记 第一季' src='data:image/svg+xml,placeholder' data-src='" + legacyPoster + "'></a></div>";
+        check(SiteParser.page(friends, true, value -> value).list.getJSONObject(0).getString("vod_pic").equals(currentPoster), "搜索第一季封面保留海报 ID 并替换豆瓣旧尺寸路径");
+        check(SiteParser.metadata("<div class='result-info'><img data-src='" + legacyPoster + "'></div>", "390655", value -> value).getString("vod_pic").equals(currentPoster), "详情封面采用相同修正规则");
+        check(SiteParser.poster(currentPoster + "?x=1").equals(currentPoster + "?x=1"), "现用封面路径与参数保持原样");
+        String otherPoster = legacyPoster.replace("img1.doubanio.com", "images.example.com");
+        check(SiteParser.poster(otherPoster).equals(otherPoster), "其他图片来源不套用豆瓣路径规则");
         check(SiteParser.page("<div class='page-more'><a href='https://evil.example/search'>下一页</a></div>", true, value -> value).next.isEmpty(), "不跟随跨站分页链接");
         check(SiteParser.id("https://www.ikanbot.com/play/12345?x=1").equals("12345"), "支持站内详情链接");
         check(SiteParser.id("https://www1.ikanbot.com/play/12345").equals("12345"), "支持作者入口重定向后的 www1 域名");

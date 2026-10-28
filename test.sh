@@ -12,3 +12,6 @@ CP="lib/json-test.jar:lib/jsoup.jar:$TASK_SDK/platforms/android-30/android.jar:b
 if [[ "${1:-}" == "--live" ]]; then
     "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.LiveTest
 fi
+if [[ "${1:-}" == "--posters" ]]; then
+    "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.PosterTest
+fi

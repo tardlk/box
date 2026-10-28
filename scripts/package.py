@@ -51,7 +51,7 @@ report = {"jar_bytes": target.stat().st_size, "md5": digest, "dex_version": dex[
           "compile_stub_excluded": True, "jsoup_included": True}
 (root / "dist/build-report.json").write_text(json.dumps(report, indent=2) + "\n")
 with zipfile.ZipFile(root / "dist/ikanbot-fongmi5.zip", "w", zipfile.ZIP_DEFLATED) as bundle:
-    for name in ["ikanbot.jar", "ikanbot.jar.md5", "config.json", "build-report.json", "verification.json", "media-check.json"]:
+    for name in ["ikanbot.jar", "ikanbot.jar.md5", "config.json", "build-report.json", "verification.json", "media-check.json", "poster-check.json"]:
         path = root / "dist" / name
         if path.exists():
             bundle.write(path, name)

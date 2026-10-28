@@ -1,0 +1,87 @@
+{
+  "checked_at": "2026-10-28T09:23:52.384852Z",
+  "first_season_verified": true,
+  "query": "老友记",
+  "posters": [
+    {
+      "bytes": 28036,
+      "width": 270,
+      "title": "老友记 第八季",
+      "url": "https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2607457445.jpg",
+      "status": 200,
+      "height": 381
+    },
+    {
+      "bytes": 25381,
+      "width": 270,
+      "title": "老友记 第二季",
+      "url": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2200410776.jpg",
+      "status": 200,
+      "height": 384
+    },
+    {
+      "bytes": 27825,
+      "width": 270,
+      "title": "老友记 第一季",
+      "url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2186920269.jpg",
+      "status": 200,
+      "height": 399
+    },
+    {
+      "bytes": 28929,
+      "width": 270,
+      "title": "老友记 第九季",
+      "url": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2341525352.jpg",
+      "status": 200,
+      "height": 382
+    },
+    {
+      "bytes": 25674,
+      "width": 270,
+      "title": "老友记 第十季",
+      "url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2187822907.jpg",
+      "status": 200,
+      "height": 369
+    },
+    {
+      "bytes": 21835,
+      "width": 270,
+      "title": "老友记 第五季",
+      "url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2330977709.jpg",
+      "status": 200,
+      "height": 371
+    },
+    {
+      "bytes": 25218,
+      "width": 270,
+      "title": "老友记 第三季",
+      "url": "https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2607457336.jpg",
+      "status": 200,
+      "height": 381
+    },
+    {
+      "bytes": 24995,
+      "width": 270,
+      "title": "老友记 第四季",
+      "url": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2375152053.jpg",
+      "status": 200,
+      "height": 383
+    },
+    {
+      "bytes": 25411,
+      "width": 270,
+      "title": "老友记 第七季",
+      "url": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2607463440.jpg",
+      "status": 200,
+      "height": 381
+    },
+    {
+      "bytes": 23411,
+      "width": 270,
+      "title": "老友记 第六季",
+      "url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2228920659.jpg",
+      "status": 200,
+      "height": 380
+    }
+  ]
+}

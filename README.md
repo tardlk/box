@@ -1,37 +1,44 @@
 # box
 
-爱看机器人 · FongMi 影视 5.x 配置与 Java 爬虫。
+FongMi 影视 5.x 配置与 Java 爬虫，包含「爱看机器人」和「爱电影」。
 
 ## 导入影视
 
-在影视的设置中打开点播配置，填写：
+在设置 → 点播配置中填写固定地址：
 
 ```text
 https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json
 ```
 
-JSON 中的 JAR 地址同样使用 `https://gh-proxy.com/` 加速。
-
-- [加速配置](https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json)
-- [加速 JAR](https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/ikanbot.jar)
-- [原始配置](https://raw.githubusercontent.com/tardlk/box/main/config.json)
-- [构建与验证说明](DEVELOPMENT.md)
-
-加载后选择「爱看机器人」。配置入口为 `csp_Ikanbot`。
-
-当前版本修复了豆瓣旧封面路径造成的《老友记 第一季》无封面问题。实网检查搜索结果中的 10 季海报全部可用，30 项契约检查通过。
-
-如加速服务仍缓存旧配置，可使用本次更新专用链接：
+如固定地址仍缓存旧版，本次更新专用地址为：
 
 ```text
-https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config-20261028-poster.json
+https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config-20261028-ivdy.json
 ```
 
-配置引用带 MD5 的固定版本 JAR 路径，避免旧文件缓存。用户已反馈查看、搜索和播放可用；本次封面修复仍待设备确认。
+JSON 与 JAR 都使用 `gh-proxy.com` 加速。配置引用带 MD5 的固定版本 JAR，避免旧二进制缓存。
+加载后选择「爱看机器人」或「爱电影」。
 
-## 构建
+## 当前验证
 
-源码在 `src/`，使用 `bash build.sh` 构建、`bash test.sh` 测试；需要 JDK 17 和 Android SDK。
-构建产物写入 `dist/`，仓库根目录文件为当前发布版本。
+- 爱看机器人：用户已反馈查看、搜索、播放可用；老友记第一季封面路径已修复，10 季海报代理实测通过。
+- 爱电影：首页、五个分类、筛选、分页、搜索、电影和剧集详情、封面、选集、播放接口已接通。
+  仅接入未登录可用画质，本轮接口默认提供标清，高清和蓝光需要登录。
+- 爱电影的视频 CDN 在当前测试网络返回 HTTP 403：`the source ip is forbidden`；原站播放器同样失败。
+  **尚未验证爱电影实际播放成功**，需在设备所在网络确认。
+- 共 46 项本地契约检查通过；Android 画面、声音、拖动仍需真机验证。
 
-上游站点实现参考：[lushunming/AndroidCatVodSpider](https://github.com/lushunming/AndroidCatVodSpider/blob/multiThread/app/src/main/java/com/github/catvod/spider/Ikanbot.java)。
+## 源码与构建
+
+使用 `bash build.sh` 构建、`bash test.sh` 测试；需 JDK 17 和 Android SDK。
+实网检查爱电影：`bash test.sh --ivdy`。媒体清单未通过时退出码为 2。
+构建产物在 `dist/`；根目录 JAR 与 JSON 为当前发布版本。
+
+- [构建与原有实现说明](DEVELOPMENT.md)
+- [爱电影实现与限制](IVDY.md)
+- [爱电影实网记录](ivdy-verification.json)
+- [加速配置](https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json)
+- [原始配置](https://raw.githubusercontent.com/tardlk/box/main/config.json)
+
+爱看机器人参考：[lushunming/AndroidCatVodSpider](https://github.com/lushunming/AndroidCatVodSpider/blob/multiThread/app/src/main/java/com/github/catvod/spider/Ikanbot.java)。
+爱电影按 [ivdy.com](https://ivdy.com) 当前网页客户端公开接口实现。

@@ -9,9 +9,13 @@ mkdir -p build/tests
 CP="lib/json-test.jar:lib/jsoup.jar:$TASK_SDK/platforms/android-30/android.jar:build/classes:build/stubs"
 "$TASK_JAVA/bin/javac" -encoding UTF-8 -cp "$CP" -d build/tests test/*.java
 "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.ContractTest
+"$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.IvdyContractTest
 if [[ "${1:-}" == "--live" ]]; then
     "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.LiveTest
 fi
 if [[ "${1:-}" == "--posters" ]]; then
     "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.PosterTest
+fi
+if [[ "${1:-}" == "--ivdy" ]]; then
+    "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.IvdyLiveTest
 fi

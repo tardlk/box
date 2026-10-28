@@ -1,0 +1,45 @@
+{
+  "checked_at": "2026-10-28T09:39:37.025110Z",
+  "detail_movie": 1,
+  "movie_episode_count": 1,
+  "tv_poster": {
+    "bytes": 21628,
+    "mime": "application/octet-stream",
+    "status": 200
+  },
+  "category_88": 24,
+  "media": [
+    {
+      "host": "ppvod01.kqgfbs.com",
+      "api_play_url": "passed",
+      "manifest_http_status": 403,
+      "error": "the source ip is forbidden",
+      "sample": "movie"
+    },
+    {
+      "host": "ppvod01.kqgfbs.com",
+      "api_play_url": "passed",
+      "manifest_http_status": 403,
+      "error": "the source ip is forbidden",
+      "sample": "tv"
+    }
+  ],
+  "search_page_2": 24,
+  "movie_poster": {
+    "bytes": 24618,
+    "mime": "application/octet-stream",
+    "status": 200
+  },
+  "android_device_tested": false,
+  "search_page_1": 24,
+  "home": 71,
+  "filtered_movie": 24,
+  "hls_verified": false,
+  "category_4": 24,
+  "movie_page_2": 24,
+  "category_3": 24,
+  "detail_tv": 1,
+  "category_2": 24,
+  "category_1": 24,
+  "tv_episode_count": 24
+}

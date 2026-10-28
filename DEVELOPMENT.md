@@ -1,9 +1,12 @@
-# 爱看机器人 — FongMi 影视 5.x 插件
+# box — FongMi 影视 5.x 插件
 
 本目录是本次新建的独立工程。运行入口为 `com.github.catvod.spider.Ikanbot`，
-配置中的类名为 **`csp_Ikanbot`**，注意大小写。
+爱看机器人配置类名为 **`csp_Ikanbot`**，爱电影为 **`csp_Ivdy`**。
+两者打包在同一个 JAR 中，配置保留原有爱看机器人站点 key。
 
 ## 使用
+
+爱电影实现与验证说明见 [IVDY.md](IVDY.md)。
 
 `dist/` 包含：
 

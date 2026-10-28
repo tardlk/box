@@ -44,5 +44,8 @@
   "user_feedback": {
     "view_search_playback": "用户反馈查看、点击、搜索和播放可用",
     "poster_fix_pending_device_confirmation": true
-  }
+  },
+  "ivdy_contract_checks_passed": 16,
+  "ivdy_live_report": "ivdy-verification.json",
+  "total_contract_checks_passed": 46
 }

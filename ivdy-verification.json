@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-28T09:39:37.025110Z",
+  "checked_at": "2026-10-29T01:49:52.341529Z",
   "detail_movie": 1,
   "movie_episode_count": 1,
   "tv_poster": {
@@ -10,18 +10,18 @@
   "category_88": 24,
   "media": [
     {
-      "host": "ppvod01.kqgfbs.com",
+      "host": "ppvod011.blbtgg.com",
       "api_play_url": "passed",
-      "manifest_http_status": 403,
-      "error": "the source ip is forbidden",
-      "sample": "movie"
+      "manifest_http_status": 200,
+      "sample": "movie",
+      "manifest_characters": 181288
     },
     {
-      "host": "ppvod01.kqgfbs.com",
+      "host": "ppvod011.blbtgg.com",
       "api_play_url": "passed",
-      "manifest_http_status": 403,
-      "error": "the source ip is forbidden",
-      "sample": "tv"
+      "manifest_http_status": 200,
+      "sample": "tv",
+      "manifest_characters": 35629
     }
   ],
   "search_page_2": 24,
@@ -34,7 +34,7 @@
   "search_page_1": 24,
   "home": 71,
   "filtered_movie": 24,
-  "hls_verified": false,
+  "hls_verified": true,
   "category_4": 24,
   "movie_page_2": 24,
   "category_3": 24,

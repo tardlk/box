@@ -115,11 +115,14 @@ public final class Douban extends Spider {
                 ? "subject_collection_items" : "items";
     }
 
-    /** Navigation only: the host never calls this for a "msearch:" card. */
+    /**
+     * Navigation only: the host never calls this for a "msearch:" card.
+     * Returns an empty list without a message, which is what the working JS spider does; a message
+     * would make the host treat the empty detail as final instead of continuing to the search.
+     */
     @Override public String detailContent(List<String> ids) {
         try {
-            return new JSONObject().put("list", new JSONArray())
-                    .put("msg", "豆瓣只提供导航，点击卡片会用片名搜索影视站点").toString();
+            return new JSONObject().put("list", new JSONArray()).toString();
         } catch (Exception failure) { return error(failure); }
     }
 
@@ -184,8 +187,11 @@ public final class Douban extends Spider {
         String name = item.optString("title").trim();
         // "chart" entries such as movie_scifi have a slug id and no poster; they are not subjects.
         if (!id.matches("[0-9]+") || name.isEmpty()) return null;
-        return new JSONObject().put("vod_id", SEARCH_PREFIX + id).put("vod_name", name)
-                .put("vod_pic", picture(item)).put("vod_remarks", remarks(item));
+        // The keyword rides along after the prefix, matching the JS spider that is known to open the
+        // search flow instead of playing the first hit: vod_id = "msearch:" + title.
+        return new JSONObject().put("vod_id", SEARCH_PREFIX + name).put("vod_name", name)
+                .put("vod_pic", picture(item)).put("vod_remarks", remarks(item))
+                .put("vod_year", year(item)).put("vod_content", item.optString("card_subtitle"));
     }
 
     private String picture(JSONObject item) {

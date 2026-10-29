@@ -26,7 +26,7 @@ public final class DoubanContractTest {
                 .put("rating", new JSONObject().put("value", 9.7))
                 .put("pic", new JSONObject().put("normal", "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p480747492.jpg"));
         JSONObject card = spider.card(item);
-        check(card.getString("vod_id").equals("msearch:1292052"), "卡片用 msearch 前缀交给宿主搜索");
+        check(card.getString("vod_id").equals("msearch:肖申克的救赎"), "卡片把片名放在 msearch 前缀后（与可用的 JS 脚本一致）");
         check(card.getString("vod_name").equals("肖申克的救赎"), "片名去掉首尾空白");
         check(card.getString("vod_remarks").equals("豆瓣 9.7 · 1994"), "评分与年份拼成备注");
         check(card.getString("vod_pic").equals("https://img3.doubanio.com/view/photo/s_ratio_poster/public/p480747492.jpg"
@@ -88,8 +88,9 @@ public final class DoubanContractTest {
         try { Douban.categoryUrl("nope", empty, 1); } catch (Exception expected) { rejected = true; }
         check(rejected, "未知分类直接报错");
 
-        JSONObject detail = new JSONObject(spider.detailContent(Collections.singletonList("msearch:1292052")));
+        JSONObject detail = new JSONObject(spider.detailContent(Collections.singletonList("msearch:肖申克的救赎")));
         check(detail.getJSONArray("list").length() == 0, "详情不返回伪造的播放线路");
+        check(detail.optString("msg").isEmpty(), "详情不附带提示语，避免宿主把空详情当成最终结果");
         check(new JSONObject(spider.playerContent("", "msearch:1292052", Collections.emptyList()))
                 .optString("msg").contains("不提供播放"), "播放入口明确拒绝");
         check(new JSONObject(spider.searchContent("老友记", false, "1")).getJSONArray("list").length() == 0,

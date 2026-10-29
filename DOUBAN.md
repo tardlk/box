@@ -14,21 +14,18 @@ FongMi 影视 5.x 入口：`com.github.catvod.spider.Douban`，配置使用 `csp
 if (id.isEmpty() || id.startsWith(SEARCH_PREFIX)) detailEmpty(false);
 ```
 
-所以卡片的 `vod_id` 是 `msearch:<豆瓣ID>`，冒号后面的值只是标记来源，宿主真正用的是片名。
-这条链路要求**片名准确**，因此本实现用原始标题，不做会把 `#`、`$` 转成全角的清洗（那是 `vod_play_url` 分隔符的需要）。
+所以卡片的 `vod_id` 是 `msearch:<片名>`，例如 `msearch:老友记 第一季`。
+前缀后面跟的是片名，这一点照抄仓库所有者另一个已验证可用的 JS 脚本
+（[Fun/js/豆瓣推荐.js](https://github.com/tardlk/Fun/blob/main/js/%E8%B1%86%E7%93%A3%E6%8E%A8%E8%8D%90.js)）：它的写法就是 `vod_id: 'msearch:' + item.title`，
+在真机上能进入搜索流程；早先本实现放的是豆瓣数字 ID，真机上会直接开播第一个同名结果。
+**不要把它改回豆瓣 ID。**
 
-宿主对 `msearch:` 的处理是**自动搜索并自动播放**，不会先给一个来源列表让人挑：
+同源约定还有一条：`detailContent` 返回 `{"list":[]}`，**不要带 `msg`**。
+宿主 `onDetail` 用 `detailEmpty(result.hasMsg())` 判断，带提示语会被当成最终结果而中断后续流程。
 
-```java
-// VodFallbackPolicy：emptyDetail → fallbackToNextSource(false) → search(name, true)
-state.setSelectFirstSource(autoFallback);   // true
-...
-if (state.isSelectFirstSource() && state.hasSources()) nextSource();   // 直接播第一个
-```
-
-筛选条件见 `mismatch()`：自动流程要求**片名完全相等**，然后取搜索结果里的第一个可用来源播放。
-想要「先看搜索结果再选源」，只能走宿主自己的搜索页（它会列出各站结果）；点豆瓣卡片这条路没有选择环节。
-这是宿主行为，不是本项目能改的，参考实现也一样。
+宿主对 `msearch:` 的默认兜底是「自动搜索并播第一个片名完全相等的来源」（`VodFallbackPolicy` 的
+`setSelectFirstSource(true)` → `nextSource()`），能不能走到「先搜索再选源」，取决于宿主版本对前缀后面这段内容的处理；
+保持一致的做法是像 JS 脚本那样把片名放进去，而不是断言某个具体行为。
 
 ## 为什么 `searchable: 0`
 
@@ -84,7 +81,7 @@ Referer 用 `https://servicewechat.com/wx2f9b06c1de1ccfca/84/page-frame.html`。
 
 ```bash
 bash build.sh
-bash test.sh            # 74 项本地检查，其中豆瓣 27 项
+bash test.sh            # 75 项本地检查，其中豆瓣 28 项
 bash test.sh --douban   # 实网：首页、七个分类、筛选、榜单第二页、真实封面
 ```
 

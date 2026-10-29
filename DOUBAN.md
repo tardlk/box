@@ -96,7 +96,7 @@ Referer 用 `https://servicewechat.com/wx2f9b06c1de1ccfca/84/page-frame.html`。
 
 ```bash
 bash build.sh
-bash test.sh            # 75 项本地检查，其中豆瓣 28 项
+bash test.sh            # 80 项本地检查，其中豆瓣 28 项
 bash test.sh --douban   # 实网：首页、七个分类、筛选、榜单第二页、真实封面
 ```
 

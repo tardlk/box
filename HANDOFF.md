@@ -1,405 +1,146 @@
-# box：交给下一个 AI 的接手说明
+# box：接手说明
 
-更新：2026-10-29（Asia/Shanghai）。先读本页，再查链接中的具体代码。
+FongMi 影视 5.x 的 Java 爬虫插件。一个 JAR 里装三个站点：豆瓣导航（挑片）、爱看机器人、爱电影。
 
-> 换新会话 / 换账号接手：把 [docs/NEXT_AI.md](docs/NEXT_AI.md) 里的提示词整段发给对方即可，
-> 那段自带仓库地址、硬性约束和新会话需要的上下文。
+本文只讲**当前状态与规矩**。每次改动「当时为什么这么做、证据是什么、没验证什么」见 [docs/HISTORY.md](docs/HISTORY.md)。
 
-## 1. 项目与交付目标
+## 1. 交付物
 
-仓库：[tardlk/box](https://github.com/tardlk/box)，当前发布分支 `main`。
-用户使用 **FongMi 影视 5.x**，希望站点能浏览、搜索、看封面、选集并播放。
-这是 Android Spider 插件：Java 源码经 D8 生成 `classes.dex`，再放入扩展名为 `.jar` 的 ZIP。
-仅用 `javac` 生成普通桌面 JAR 不够。
-
-固定导入地址：
-
-```text
-https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json
-```
-
-三个站点共用一个 JAR，历史命名仍叫 `ikanbot.jar`，不表示只含 ikanbot。
-当前线上 JAR：`jar/box-2f9c75b1530c8299f4123fac9e7668c1.jar`（2026-10-29 16:50 起，封面改回豆瓣直连）。
-上一版为 `jar/box-91c19c170b12bd16fb74c018e6d4fc3c.jar`（封面补请求头），
-再往前 `jar/box-934ad6bce4626704024e66dd59d1b111.jar`（爱看机器人提速）、
-`jar/box-4c420eb0759d0f1703f5d3d34bc1ffdd.jar`（只改配置那次）、
-`jar/box-50812b34404760998b435d60361aea54.jar`（首次含豆瓣导航）。
-2026-10-29 15:29 复核：从当前 `main` 重新构建的 `classes.dex` 与当时线上 JAR 的 SHA-256 完全相同。
-本次（16:20）是源码改动后的新发布，DEX 自然不同；核对方式仍是「重新构建后比 DEX，不比外层 JAR MD5」。
-
-## 2. 已完成与未完成
-
-| 项目 | 当前证据 | 下一位 AI 不能误判的部分 |
-|---|---|---|
-| 爱看机器人 `csp_Ikanbot` | 用户明确反馈浏览、点击、搜索、播放可用；2026-10-29 15:29 复验首页、分类第二页、搜索第一/二页、详情、HLS 全通过；封面改为豆瓣直连后，**所有者已在手机上确认「正常了」**（16:50，见 §14） | 不是旧 AI 的残留工程；请在当前实现上修改。搜索第二页已不再是待办 |
-| 老友记第一季海报 | 旧豆瓣地址 403；改路径后 10 季海报代理均返回可解码图片 | 封面非空字符串不代表图片可用 |
-| 爱电影 `csp_Ivdy` | 分类、筛选、分页、搜索、详情、封面、选集和取址接口通过实网检查；2026-10-29 用户确认设备上可播放 | 声音、拖动与弱性能盒子的解码表现未单独确认；播放可用不等于各画质都稳定 |
-| 爱电影画质 | 2026-10-29 起默认取最高分辨率，复测电影样例实际选中 1080p 并取到有效分片；同画质优先 `flag=true` | 接口对 720/1080 仍标 `needLogin=true`。放开高分档是仓库所有者的决定（2026-10-29 明确要求），不是技术判断；不要反过来又按标注降级 |
-| 豆瓣导航 `csp_Douban` | 七个分类、首页推荐、筛选、Top250 翻页、封面直连通过实网检查；2026-10-29 用户在 FongMi 5.8.4 确认点卡片进搜索页并可选源 | 它是导航站：`vod_id` 用 `msearch:` 前缀，靠片名交给影视站搜索，本身无详情与播放。`searchable` 必须是 0，否则点卡片会绕回搜索 |
-| 本地测试 | 爱看机器人 35 + 爱电影 17 + 豆瓣 28，共 80 项通过（2026-10-29 15:29 复跑仍全过） | 历史记录不能当成本轮新测试；没有连接 Android 真机 |
-
-如果爱电影播放再次失败，先在当前网络对照原站，再比较接口与媒体请求；保留失败正文。
-已确认 `403 the source ip is forbidden` 是 CDN 按来源 IP 放行造成的，换 Referer、换新鲜令牌都不会改变结果，
-不要在插件里试图绕过它。不要把返回 `parse=0` 或获得 `.m3u8` 地址当作播放成功。
-
-## 3. 五分钟定位源码
-
-| 路径 | 用途 / 最适合从哪里开始读 |
+| 项 | 值 |
 |---|---|
-| `src/main/java/com/github/catvod/spider/Ikanbot.java` | 完整 Spider 调用流程，详情 HTTP 优先、可选 WebView 后备 |
-| 同目录 `SiteParser.java` | HTML 卡片、真实分页、token、资源 JSON、豆瓣海报修正 |
-| 同目录 `SiteHttp.java` | HTTP 会话、实际落地域名、UA、gzip、超时、媒体 URL 检查 |
-| 同目录 `Proxy.java` | 登记海报 ID，补 Referer，返回图片字节；包含公网地址检查 |
-| 同目录 `BrowserPage.java` | Android 可见 WebView、页面公开 DOM 读取、取消和销毁 |
-| 同目录 `Ivdy.java` | 新站点入口；用选集 ID 延迟取址，适合学习新增 API 型站点 |
-| 同目录 `IvdyApi.java` / `IvdyParser.java` | 域名发现、公开客户端签名、接口转播放器 JSON |
-| 同目录 `Douban.java` | 导航型站点：分类与筛选项、`msearch:` 卡片、封面代理；无详情与播放 |
-| `src/stubs/.../Spider.java` | 本地最小编译接口；实际能力以 FongMi 宿主源码为准 |
-| `build.sh` / `scripts/package.py` | 编译、D8、依赖合并、DEX 检查、JAR 和配置生成 |
-| `test/` / `test.sh` | 契约测试与按需执行的实网测试 |
-| `IVDY.md` / `DOUBAN.md` / `DEVELOPMENT.md` | 各站点的具体实现与历史验证说明 |
+| 仓库 | [tardlk/box](https://github.com/tardlk/box)，分支 `main` |
+| 导入地址（固定） | `https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json` |
+| 当前 JAR | `jar/box-2f9c75b1530c8299f4123fac9e7668c1.jar`（182402 字节） |
+| 当前发布快照 | `config-20261029-douban-covers.json` |
+| 契约检查 | 80 项（爱看机器人 35 + 爱电影 17 + 豆瓣 28） |
 
-本机原工作目录为 `ikanbot-spider/`，曾通过 GitHub 连接器直接提交，没有 `.git`。
-换机器接手应直接 `git clone https://github.com/tardlk/box.git`，不依赖原机或旧聊天。
-README、源码、开发说明现在在本地和 GitHub 使用相同文件名，无需手动重命名上传。
+JAR 是 Android 插件：Java 源码 → D8 生成 `classes.dex` → 装进扩展名为 `.jar` 的 ZIP。
+只用 `javac` 打普通桌面 JAR 不行。历史文件名仍叫 `ikanbot.jar`，但它装的是三个站点。
 
-## 4. 从干净克隆构建
+| 站点 key | 入口类 | 说明 |
+|---|---|---|
+| `douban` | `csp_Douban` | 导航站，`indexs:1`、`searchable:0`，排第一位 |
+| `ikanbot_fresh` | `csp_Ikanbot` | 爱看机器人，HTML + 资源接口，可选 WebView 后备 |
+| `ivdy` | `csp_Ivdy` | 爱电影，匿名 API + 客户端签名 |
+
+## 2. 当前状态
+
+已验证的（有记录，但不等于本轮重测）：
+
+- 爱看机器人：浏览、点击、搜索、播放由仓库所有者确认可用；首页/分类第二页/搜索第一二页/详情/HLS 实网通过（见 HISTORY 第 4 节）。
+- 爱看机器人封面：直连豆瓣 CDN，**所有者已在手机上确认正常**（HISTORY 第 6 节）；`--posters` 老友记 10 季 10/10。
+- 爱电影：五个分类、筛选、分页、搜索、电影与剧集详情、封面、选集、取址全部通过；HLS 清单验证通过；**所有者确认设备可播放**；默认取最高画质。
+- 豆瓣导航：七个分类、筛选、Top250 翻页、封面直连通过；**所有者确认点卡片进搜索页并可选源**。
+
+还没验证的：
+
+- 真机上的声音、拖动、弱性能盒子播 1080p 的稳定性（只有模拟器与接口层证据）。
+- 电视版（leanback）点豆瓣卡片进 `CollectActivity` 的实际体验；遥控器操作手感。
+- 跨站搜索结果的聚合表现。
+- 爱看机器人搜索第二页在「非本机网络」下的表现（本机验证过，但本机链路不稳）。
+
+已知问题：
+
+- 爱看机器人 15 秒读超时在站点抽风时会直接报错。放宽还是加重试**尚未决定**，代价是要重新发布 JAR，见 HISTORY 第 4.4 节。
+- 站点与部分图床在本机会间歇性「返回 200 但正文传到一半不收尾」。这是链路问题，不是解析 bug；别为了绕它去改超时然后声称验证过。
+
+## 3. 硬约束
+
+1. **豆瓣配置里的 `indexs: 1` 不能删。** 宿主靠它把点卡片变成「进搜索页」；手机版进 `SearchActivity`，电视版进 `CollectActivity`。删了就退化成自动播第一个同名结果。
+2. **豆瓣接口只认微信小程序 UA。** 换普通浏览器 UA 返回 400 / `code 997`。见 `Douban.UA`。
+3. **豆瓣封面直连 + `@Referer=` 后缀。** 宿主 `ImgUtil` 会把后缀变成请求头再剥掉。不要改回走本插件代理。
+4. **爱看机器人封面直连豆瓣 CDN + `@Referer=https://movie.douban.com/`。** 豆瓣图床不带 Referer 返回 **418**。不要改回走站点代理 `imgp2.ikanbot.eu.org`——它是境外 Worker，实测单张 4–40 秒、约一半不响应（HISTORY 第 6 节）。
+5. **爱看机器人入口保持 `v.ikanbot.com`。** 它 301 到当次可用镜像；直连 `www` 的详情页会超时。`SiteHttp` 跟随一次后会把 `origin` 换成落地域名。
+6. **三个站点共用一个 JAR，已有 key 不能改、不能互相覆盖。** 新增站点必须用新 key。
+7. **爱电影默认最高画质是仓库所有者的决定**（2026-10-29）。不要按接口的 `needLogin` 标注把它降回 720。
+8. **豆瓣 `searchable` 必须是 0。** 否则搜索结果还是 `msearch:` 卡片，点进去又触发搜索，绕回自己。
+9. **`detailContent` 返回 `{"list":[]}` 且不带 `msg`。** 宿主用 `detailEmpty(hasMsg())` 判断，带提示语会被当成最终结果。
+10. **不要为了「看起来快」加长缓存或改超时，然后声称验证过。** 测不了就说没测。
+
+## 4. 源码地图
+
+| 路径 | 用途 |
+|---|---|
+| `src/main/java/com/github/catvod/spider/Ikanbot.java` | 爱看机器人入口：分类、搜索分页、详情调度、播放输出、短 TTL 缓存 |
+| 同目录 `SiteParser.java` | HTML 卡片、真实分页游标、token、资源 JSON、豆瓣海报路径修正 |
+| 同目录 `SiteHttp.java` | HTTP 会话、落地域名、UA、gzip、超时、媒体 URL 校验 |
+| 同目录 `Proxy.java` | 登记海报 ID、补请求头、返回图片字节 |
+| 同目录 `BrowserPage.java` | Android 可见 WebView、公开 DOM 读取、取消与销毁 |
+| 同目录 `Ivdy.java` / `IvdyApi.java` / `IvdyParser.java` | 爱电影：域名发现、公开签名、接口转播放器 JSON |
+| 同目录 `Douban.java` | 豆瓣导航：分类与筛选、`msearch:` 卡片、封面直连 |
+| `src/stubs/.../Spider.java` | 本地最小编译接口；实际能力以宿主源码为准，未定义的方法不代表宿主没有 |
+| `build.sh` / `scripts/package.py` | 编译、D8、依赖合并、DEX 边界检查、JAR 与本地配置生成 |
+| `test/` / `test.sh` | 契约测试 + 按需实网测试 |
+| `scripts/prepare_release.py` / `verify_release.py` | 发布暂存与校验 |
+
+## 5. 构建与测试
 
 ```bash
-git clone https://github.com/tardlk/box.git
-cd box
-export IKANBOT_JAVA_HOME=/absolute/path/to/jdk-17
-export IKANBOT_ANDROID_SDK=/absolute/path/to/android-sdk
-bash build.sh
-bash test.sh
+git clone https://github.com/tardlk/box.git && cd box
+bash build.sh          # 产物在 dist/
+bash test.sh           # 80 项契约检查
 ```
 
-SDK 需要 `platforms/android-30/android.jar` 和 `build-tools/35.0.0/d8`；还需要 Python 3。
-`build.sh` 会下载并校验固定版本 Jsoup 与 JVM 测试 JSON 依赖；`lib/` 无需随仓库复制。
-在 macOS 未设置上述环境变量时，脚本使用用户 `Library/` 下的既有安装。
-其他环境显式设置变量；不要硬编码原用户的用户名或绝对路径。
+需要 JDK 17、Android SDK 的 `platforms/android-30` 与 `build-tools/35.0.0`、Python 3。
+可用 `IKANBOT_JAVA_HOME` / `IKANBOT_ANDROID_SDK` 覆盖默认路径；`build.sh` 会下载并校验固定版本的 Jsoup 与测试用 JSON 库。
 
-构建后本地 `dist/` 提供相对 JAR 地址的配置，仓库根 `config.json` 是线上加速配置；两者用途不同。
-发布前使用 [发布脚本](docs/RELEASING.md) 生成线上配置，不能直接用本地相对配置覆盖线上文件。
-
-## 5. 加一个新站点的顺序
-
-1. 在真实页面确认稳定入口、最终跳转域名、分类、搜索分页、详情选集、播放请求和封面请求。
-2. 判断数据在 HTML、公开 JSON API 还是网页运行后 DOM。优先参考当前站点和宿主源码。
-3. 对照 `Ivdy.java`、`Ikanbot.java` 或 `Douban.java` 写新的公开 Spider 子类，把解析逻辑和网络逻辑分开。
-   导航型站点参考 `Douban.java`：`vod_id` 用 `msearch:` 前缀，`searchable` 设为 0。
-4. `csp_Xxx` 对应 `com.github.catvod.spider.Xxx`，保留无参构造；按 [SPI 格式](docs/JAR_GUIDE.md) 返回 JSON。
-5. 在 `scripts/package.py` 增加站点配置及入口类存在检查，并同步 `scripts/verify_release.py` 的必需 `csp_` 集合；不要覆盖已有三站。
-6. 用真实响应的最小样本做解析/签名/分页回归；实网验证图片实际字节和媒体清单，记录失败。
-7. 生成新版本发布目录，连同源码、文档和记录一次提交；校验加速配置实际下载到新 JAR。
-
-不要先用另一个项目的整个 JAR 当黑箱依赖，再声称实现完毕。这个工程已包含自己需要的 Jsoup。
-
-## 6. 按需验证与接手优先级
+实网开关，每个只跑对应站点，不是全跑：
 
 ```bash
-bash test.sh             # 80 项本地检查；先构建
-bash test.sh --posters   # ikanbot 老友记 10 季图片代理，检查真实图片
-bash test.sh --live      # ikanbot 首页/分类/搜索/详情/HLS
-bash test.sh --ivdy      # 爱电影完整接口；没有可访问 HLS 时退出码 2
-bash test.sh --douban    # 豆瓣七个分类/筛选/榜单翻页/封面代理
+bash test.sh --live      # 爱看机器人：首页、分类第二页、搜索两页、详情、HLS
+bash test.sh --posters   # 爱看机器人：老友记 10 季封面（豆瓣直连，检查真实图片）
+bash test.sh --ivdy      # 爱电影：完整接口 + HLS（没有可用 HLS 时退出码 2）
+bash test.sh --douban    # 豆瓣：七分类、筛选、榜单翻页、封面
 ```
 
-每个实网开关只执行对应检查，不是把所有站点都跑一遍。
-测试写到 `dist/` 的记录是新结果；仓库根同名记录是历史发布证据，不要悄悄刷新日期。
+`dist/` 里的记录是新结果；仓库根同名记录是发布证据，不要悄悄改日期。
 
-后续优先级：真机上确认豆瓣卡片的跨站搜索结果聚合与遥控器操作 → ikanbot 原生 WebView 与遥控器交互确认
-（豆瓣卡片点击、爱电影播放均已由用户确认可用）。
-若网站更新，先复现具体入口，不要因一个站点故障重写另一个已可用站点。
-
-### 6.1 本机跑实网测试必须先给 JVM 指定代理（2026-10-29 新增）
-
-这台机器的出口是本地代理（`HTTP_PROXY`/`HTTPS_PROXY` = `http://127.0.0.1:<port>`，同时开了 TUN）。
-`SiteHttp` 用的是 `HttpURLConnection`，**Java 不读 `http_proxy` 环境变量**，默认直连会直接失败：
-
-```text
-爱看机器人：Remote host terminated the handshake
-```
-
-看到这个报错先怀疑网络路径，不要改插件代码。用 `JAVA_TOOL_OPTIONS` 让 JVM 走同一个代理即可：
+**本机跑实网测试必须先给 JVM 指定代理。** 这台机器的出口是本地代理（TUN + `HTTP_PROXY`），而 Java 不读 `http_proxy`：
 
 ```bash
 export JAVA_TOOL_OPTIONS="-Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=<端口> -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=<端口>"
-bash test.sh --live
 ```
 
-端口从 `env | grep -i proxy` 取当前值，会随会话变化，不要写死进脚本或文档常量。
-安卓真机用的是设备自己的网络，**不要**把代理参数加进 `SiteHttp`。
+不给就会看到 `Remote host terminated the handshake`——那是网络路径问题，**不要改插件代码**。
+端口从 `env | grep -i proxy` 取当前值。安卓真机用设备自己的网络，不要把代理写进 `SiteHttp`。
 
-## 7. 去哪里查资料
+## 6. 发布
 
-先查 [docs/REFERENCES.md](docs/REFERENCES.md)：已核对 FongMi 的 `Spider.java`、`JarLoader.java`，
-以及 lushunming 的参考实现；同时列出了 Android D8、SDK 和 Jsoup 官方资料。
-站点域名、JS chunk 名称和接口会变，资料索引说明了重新定位的方法。
-发布和回滚见 [docs/RELEASING.md](docs/RELEASING.md)。
+完整步骤见 [docs/RELEASING.md](docs/RELEASING.md)。要点：
 
-## 8. 本次交接校验
+1. `bash build.sh` → `bash test.sh` → 按改动选实网开关。
+2. `python3 scripts/prepare_release.py --output build/release --snapshot config-<日期>-<主题>.json`
+3. `python3 scripts/verify_release.py --directory build/release`
+4. 按 `release-manifest.json` 复制到仓库根与 `jar/`，源码、配置、JAR 放**同一次提交**。
+5. push 后用 `--config-url ... --expected-md5 <新 MD5>` 回读线上确认。
 
-2026-10-29 在不复用构建缓存的干净目录完成构建、46 项本地测试和发布暂存校验。
-新构建 DEX 与当前线上 JAR 的 DEX 完全相同；JAR 外层打包时间导致 MD5 不同，因此没有替换线上产物。
-同时核对了当前加速配置下载的 JAR，以及发布工具对旧 MD5、损坏文件、缺失既有站点的拒绝行为。
-结构化记录见 [docs/handoff-validation.json](docs/handoff-validation.json)。
-本次未重跑站点实网取址或连接 Android，原有实网记录仍保留原日期及限制。
+只改配置时**不要重新打包 JAR**，用户就不用重新下载。
+`package.py` 的 ZIP 条目带打包时间，同一份源码多次打包 MD5 会不同——核对源码一致性要比 `classes.dex` 的 SHA-256，不要比外层 JAR MD5。
+不要覆盖已发布的 `jar/box-<md5>.jar` 与历史 `config-日期-主题.json`；回滚靠新增提交，不改写历史。
 
-## 9. 2026-10-29 网络恢复后的复测
+## 7. 加新站点
 
-用户告知原测试网络的 IP 限制已解除，随后在干净克隆上完整重跑，结论与交接时不同：
+1. 先在真实页面确认稳定入口、落地域名、分类、搜索分页、详情选集、播放请求、封面请求。
+2. 判断数据在 HTML、公开 JSON API 还是渲染后的 DOM。
+3. 对照 `Ivdy.java`、`Ikanbot.java` 或 `Douban.java` 写新的 `Spider` 子类，解析与网络分开。导航型站点参考 `Douban.java`（`msearch:` + `indexs:1` + `searchable:0`）。
+4. 类名 `com.github.catvod.spider.Xxx` 对应配置 `csp_Xxx`，保留无参构造。
+5. 在 `scripts/package.py` 增加站点配置与入口类检查，同步 `scripts/verify_release.py` 的必需 `csp_` 集合；不要覆盖已有三站。
+6. 用真实响应的最小样本做解析回归；实网验证要检查真实图片字节和媒体清单。
+7. 一次提交里带源码、文档、记录，再走发布流程。
 
-- `bash build.sh` 通过；新构建 `classes.dex` 与线上 `jar/box-7b075ad627b2d5cbbfc29f253d3b3b1c.jar` 的 SHA-256 完全相同，JAR 仅外层时间戳不同，因此不需要替换线上产物。
-- `bash test.sh` 46 项全过；`--live` 爱看机器人全过（HLS 清单 70181 字符）；`--posters` 老友记 10 季全过。
-- `--ivdy` 全部通过，**HLS 首次验证成功**：电影 181288 字符、剧集 35629 字符，首分片为有效 TS（同步字节 `0x47`）。
-- 之前记录的 `403 the source ip is forbidden` 未复现。同一时刻换 Referer（站内 / 无 / ivdy.com）、换刚签发的令牌，响应一致，说明当时是 CDN 按来源 IP 放行，不是插件问题。
-- 落地域名由 `y2s52n7.com` 换到新的轮换域名，`IvdyApi.discover()` 正常跟随；CDN 主机也从 `ppvod01.kqgfbs.com` 换到 `ppvod011.blbtgg.com`，鉴权参数形态由 `whip` 变为 `auth_key`。这两处都说明写死域名或参数会随站点轮换失效。
-- 新记录见 `dist/ivdy-verification.json`，仓库根同名文件已更新为本次结果（`hls_verified: true`）。
-- 仍未单独确认：设备上的声音、拖动，以及弱性能盒子播放 1080 时的稳定性。
+不要拿别的项目的整包 JAR 当黑箱依赖，本工程已自带 Jsoup。
 
-本轮没有修改运行源码，不需要重新发布 JAR；只更新了验证记录与文档。
+## 8. 待办优先级
 
-### 9.1 同日：默认画质改为最高（本次发布）
+1. 真机确认：电视版豆瓣卡片的 `CollectActivity` 与遥控器操作。
+2. 弱性能盒子播 1080p 的稳定性、声音、拖动。
+3. 决定爱看机器人读超时策略（HISTORY 第 4.4 节有数据与代价）。
+4. 站点若改版，先复现具体入口，不要因为一个站点故障重写另一个已可用的站点。
 
-- 仓库所有者要求「升级到 1080p，默认播放就是最高画质」，因此改为按 `resolution` 取最高档，`needLogin` 不再参与筛选，同画质优先 `flag=true`；没有可用媒体地址时报「当前剧集没有可用的播放线路」。
-- 契约测试由「遵循未登录默认画质」改为「默认选择最高画质，不因登录标记降级」，并新增同画质优先默认线路、无媒体地址两条，爱电影契约共 17 项，全库 47 项。
-- 实网复测：电影样例可选 1080/720/480，实际选中 **1080p**，清单 163689 字符；三档首分片均为有效 TS（1080 为 2541948 字节）。老友记样例当轮只提供 720，按规则取 720。
-- 已按发布流程用 `prepare_release.py` 暂存、`verify_release.py` 校验同一次提交内的新 JAR、根 `config.json`、快照配置，并回读线上配置比对 MD5。
-- **已由用户确认设备上可播放**（2026-10-29，反馈「目前可以播放了」）。仍未单独确认的是声音、拖动和弱性能盒子上的 1080 解码表现；若反馈卡顿，回退方式是把配置指回上一版固定 JAR。
+## 9. 资料入口
 
-## 10. 2026-10-29：新增豆瓣导航（本次发布）
-
-> 收口状态：用户已在 FongMi 5.8.4 上确认「点卡片进入搜索页、自己选源」可用。关键是配置里的 `indexs: 1`（见 10.2），
-> 代码侧无需再改；手机版进 `SearchActivity`，电视版进 `CollectActivity`。
-
-
-用户要求在参考实现 `lushunming/AndroidCatVodSpider` 的 `Douban.java` 基础上加豆瓣导航。实现见 `Douban.java`，说明见 [DOUBAN.md](DOUBAN.md)。
-
-接手时要先知道的四件事：
-
-1. **`msearch:` 是宿主约定，不是本项目发明**。`VodPlaybackController.checkId` 遇到 `msearch:` 前缀直接 `detailEmpty(false)`，不请求详情。
-   **前缀后面必须跟片名**（`msearch:老友记 第一季`）：仓库所有者另一个 JS 脚本这样写，真机进入搜索流程；放豆瓣数字 ID 会直接开播第一个同名结果。
-   当前宿主分支只用前缀、不解析后缀，所以别以本地读到的源码为唯一依据——以真机行为为准。
-   同理 `detailContent` 返回 `{"list":[]}` 且**不带 `msg`**，否则 `detailEmpty(hasMsg())` 会把空详情当最终结果。
-2. **`searchable` 必须是 0**。否则搜索结果还是 `msearch:` 卡片，点进去又触发搜索，绕回自己。
-   参考实现同样设为 0（`json/index.json` 的「豆瓣仅推荐」）。
-3. **接口只认微信小程序 UA**。同一 `apikey` 配 Chrome UA 稳定返回 HTTP 400 / `code 997`；交替实测确认过。
-   不能把 `Douban.UA` 换成通用的 `SiteHttp.UA`，因此 `SiteHttp.open` 增加了带 UA 的重载——这是本次唯一改动的共用代码。
-4. **封面是直连地址加 `@Referer=` 后缀**，由宿主 `ImgUtil.getUrl` 解析出请求头再加载，不要改回走 `Proxy`。
-   2026-10-29 曾误判「封面必须带 `Accept: image/*`」，已更正：那些 418 是连续请求触发的 IP 级限流，不是缺头。
-
-第一版把封面接到了 `Proxy` 上，并为此抽出 `Proxy.url`、把 `Ikanbot.image` 改成调用它。设备上看不到豆瓣封面后已整体还原：
-`Proxy.java`、`Ikanbot.java` 与加豆瓣之前逐字节一致，豆瓣改为直连 URL。加这个站点最终只新增 `Douban.java` 和一处 `SiteHttp` 重载。
-
-关于「点卡片没有选源」：第一版把 `msearch:` 后面写成豆瓣数字 ID，真机点开直接播了第一个同名结果。
-仓库所有者指出他另一个 JS 脚本能把点击变成搜索，对照后差别就在后缀——JS 写的是 `msearch:` + **片名**。
-现已照此对齐，并同步去掉 `detailContent` 的 `msg`。以后遇到「点卡片行为不对」，先比对这个脚本的约定，
-不要只根据本地宿主源码下结论：当前分支不解析后缀，但真机行为说明宿主链路里还有别处在用这段内容。
-
-### 10.2 点卡片进搜索页靠的是 `indexs: 1`
-
-宿主用 `Site.isIndex()`（即配置里 `indexs == 1`）区分「导航站」：手机版点卡片走 `SearchActivity`，
-电视版走 `CollectActivity`（都带 keyword）；没有这个字段就直接 `VideoActivity` 并自动播第一个同名结果。
-2026-10-29 在 Android TV 模拟器 + FongMi 5.8.4 上做了三组对照（我们的 JAR / 仓库所有者的 JS / 其 39 站完整配置），
-行为差异全部由这个字段解释。**配置里删掉 `indexs` 就会退回“点一下就播”。**
-
-分类设计上把剧集筛选与综艺筛选拆成两个分类：豆瓣的 `tags` 之间是「与」关系，
-电视剧形式与综艺形式放在同一组会互相冲突，选两个就查不到东西。
-
-验证：当时 75 项契约检查（30 + 17 + 28）全过；`--douban` 七个分类各 20 条、榜单 10 条、Top250 第二页、封面 270x405 直连成功。
-（爱看机器人提速后契约增至 35 项，全库现为 80 项。）
-卡片点击与选源已由仓库所有者在 FongMi 5.8.4 上确认；仍未确认的是跨站搜索结果聚合与遥控器操作。
-
-### 10.1 站点顺序
-
-`package.py` 的 `sites` 顺序即首页 Tab 顺序，第一个是默认页。2026-10-29 按仓库所有者要求把 `douban` 调到第一，
-次序为 `douban`、`ikanbot_fresh`、`ivdy`。这次只改配置，没有重新打包 JAR，线上 MD5 仍是 `4c420eb0…`。
-
-注意：豆瓣 `searchable=0`，所以点卡片后的同名搜索不会把豆瓣算进去，自动选中哪个来源仍由 `ikanbot_fresh`、`ivdy` 的相对顺序决定；
-想让 1080p 的爱电影优先，需要把它挪到爱看机器人之前（当前未改）。
-
-## 11. 2026-10-29：爱看机器人提速
-
-用户反馈同一个站，仓库所有者的 drpy3 源（`爱看机器人.js`）明显比我们的 Java 快。对比后按四处结构差异改：
-
-1. **加缓存**：首页/分类/搜索 180 秒、详情 120 秒。此前完全没有缓存，每次切 Tab、每次回看都重拉整页。
-   实测详情首次 9.3 秒、**命中缓存 0 毫秒**。
-2. **封面改走站点自己的封面代理** `imgp2.ikanbot.eu.org/i/<ID>?u=<base64url>`，与 JS 源一致。
-   之前每张封面都要「客户端 → 本插件代理 → 源站」绕一圈，一页 24 张就是 24 次多余往返；
-   而且 `Proxy.proxy` 每张图都做一次 DNS 校验、`image()` 每张卡片做一次反射。`i` 只是缓存名，传任意数字都行。
-   **本节已被 §14 取代**：该代理是境外 Worker，实测单张 4–40 秒且约一半不响应，现已改为豆瓣直连 + `@Referer=`。
-   保留这段是为了说明「当时为什么这么改」，不要按它回退。
-3. **WebView 降级从 90 秒收到 25 秒**。直连失败时会开 WebView，90 秒等于让用户干等一分半。
-4. **入口域名保持 `v.ikanbot.com`**。曾试图直连 `www.ikanbot.com` 省一次 301，实测 www 的详情页直接超时，
-   而 `v` 会 301 到可用的 www1。`SiteHttp` 跟随一次后把 `origin` 更新成落地域名，后续不再吃 301。**不要改成 www。**
-
-`PosterTest` 已改为检查站点封面代理这条真实链路（10 季全部返回可解码 JPEG）。
-未做：搜索翻页仍靠 `next` 游标（JS 用 `?p=N` 直达，但实测该参数返回空页，没敢用）。
-遗留：15 秒读超时在该站抽风时会直接报错；若长期如此需要单独评估是否放宽。
-
-## 12. 2026-10-29 15:29 接手复验（本轮）
-
-未改任何运行源码，只做验证与文档订正；线上 JAR 与 `config.json` 未变动。
-
-### 12.1 结论
-
-| 项 | 结果 |
-|---|---|
-| `bash build.sh` | 通过，JAR 182631 字节 |
-| `classes.dex` SHA-256 | `8d1a49552304eb48f9dbd809d0451d238dc5ab6424756126763dca0d49fda0fd`，与线上 `jar/box-934ad6…jar` 逐字节相同 |
-| `bash test.sh` | 80 项全过（35 + 17 + 28） |
-| 线上 `config.json` | 回读正常，三站顺序 `douban`(indexs 1, searchable 0) → `ikanbot_fresh` → `ivdy`，JAR MD5 `934ad6…` 与文件一致 |
-| `--live` 爱看机器人 | 首页 24、电影第二页 24、**搜索第一页 10、搜索第二页 10**、详情《黑球》28 条线路、HLS 113914 字符（`play.xluuss.com`） |
-| `--douban` | 12 项通过：七类各 20 条、榜单 10 条、筛选 20 条、Top250 第二页 20 条、封面 270×405 |
-| `--ivdy` | 14 项通过；电影 HLS 178789 字符、剧集 HLS 32609 字符 |
-| `--posters` | **本轮未取得完整通过**，见 12.3 |
-
-**待办 1（爱看机器人搜索第二页）已完成**：`searchContent("变形金刚", false, "2")` 返回 10 条且 `page=2`；
-与第一页对照，两页片名只有「变形金刚2」这 1 条同名（`vod_id` 不同，是不同条目），不是把第一页重放一遍。
-
-### 12.2 本轮观察到的上游不稳定（未改代码）
-
-爱看机器人同一请求会在「2–8 秒成功」和「超过 40 秒只吐半截正文」之间跳。采样（`www1` 的 `/search`）：
-
-| 次 | HTTP | 收到字节 | TTFB | 总耗时 |
-|---|---|---|---|---|
-| 1 | 200 | 22481（完整） | 6.0s | 8.8s |
-| 2 | 200 | 18463（截断） | 1.3s | 40s 超时 |
-| 3 | 200 | 8196（截断） | 5.2s | 40s 超时 |
-| 4 | 200 | 22481（完整） | 8.2s | 36s |
-| 5 | 200 | 4098（截断） | 6.1s | 40s 超时 |
-
-特征：状态码 200、首字节正常，正文传到一半不再收尾（`HTTP/2` 无 `Content-Length`；Java 走 HTTP/1.1 chunked，等不到结束标记）。
-此时插件的 15 秒读超时会直接抛 `Read timed out`，用户侧表现为「搜索失败」。
-
-同一时刻另一侧证据：`--posters` 连试多次分别通过 4 项、2 项、0 项，说明封面域名（`imgp2`）同样受影响，
-而仓库根 `poster-check.json`（14:31 那次）是 10/10 全过 —— 说明**代码路径没退化，是本机链路在抖**。
-
-本机这条链路上，`curl` 也复现同样的半截卡住（含 `--noproxy` 走 TUN 时），
-所以**无法区分**是站点、Cloudflare 还是本地代理的问题。据此改超时或加重试没有可靠依据，
-本轮不动源码；是否要加「一次瞬时失败重试」见 12.4。
-
-### 12.3 未能完成的部分
-
-- `--posters` 未拿到 10/10：最好一次只到 4 项就被读超时打断。**不要**因此改写 `poster-check.json` 的日期。
-- 与之前一样，没有连接 Android 真机：豆瓣卡片点击、遥控器操作、声音与拖动、弱性能盒子 1080 稳定性仍未确认。
-
-### 12.4 待仓库所有者决定
-
-爱看机器人 15 秒读超时是否放宽 / 是否加一次瞬时失败重试？
-
-- 加一次重试：失败时多等一轮（约 15 秒上限），成功率高；但要改运行源码 → 重打包 → 用户重新下载 JAR。
-- 放宽到 25 秒：命中率提高，但抽风时用户要干等更久；同样需要重新发布。
-- 都不做：保持现状，搜索偶发失败靠用户重试。
-
-在本机链路上测得的数据不足以为此背书，建议在用户真实网络（真机）上复现一次再定。
-
-## 13. 2026-10-29 16:20：封面被 403 的修复（本次发布）
-
-用户反馈「爱看机器人加载慢、没有封面」。慢是链路问题（见 12.2），**没有封面是代码问题**，已在 Android TV 模拟器上复现并修复。
-
-### 13.1 根因
-
-站点封面代理 `imgp2.ikanbot.eu.org` 拒绝裸图片请求。同一张图、同一个 URL，只换请求头：
-
-| 请求头 | 结果 |
-|---|---|
-| 无 | 403（HTML 错误页 4551 字节） |
-| 仅 UA | 403 |
-| 仅 Referer | 403（3 次） |
-| UA + Referer | 200，28036 字节真 JPEG，270×381 |
-
-宿主的图片加载器裸请求，所以封面必然 403。这不是「加载慢」。
-`§11` 把封面从本插件代理改走站点代理时，只用 `PosterTest`（Java 请求自带 UA/Referer）验证过，
-**从未验证真机图床的请求形态**，这就是缺口。
-
-### 13.2 修复
-
-`Ikanbot.poster()` 给站点代理地址追加宿主认识的请求头后缀，与 `Douban.java` 同一个机制：
-
-```text
-https://imgp2.ikanbot.eu.org/i/<ID>?u=<base64url>@Referer=https://v.ikanbot.com/@User-Agent=Mozilla/...
-```
-
-宿主 `ImgUtil` 会取出 `@Referer=` / `@User-Agent=` 作为请求头，再 `split("@")[0]` 剥掉后缀，
-所以**客户端仍然直连 CDN，没有多一跳**——`§11` 的性能收益保留。
-注意 `u` 的 base64url 不含 `@`，加后缀不会破坏参数。
-
-**不要删这两个后缀**，删了封面会静默退回全空（403 不报错，只是没图）。
-
-### 13.3 证据
-
-同一台 `boxtest`（Android TV 1080p）模拟器，同一批豆瓣热门内容：
-
-| 设备上的 jar | 封面 |
-|---|---|
-| `7c6bf0b2…`（改前） | 0 张真图，全部空框 |
-| `bbb580fd…`（改后） | `黑球`、`死神 千年血战篇` 等真剧照出现 |
-
-设备 `cache/jar/` 里两个文件的 MD5 可对照，不是靠肉眼判断。
-其余仍偶发空白的卡片受 12.2 的链路抖动影响，与本修复无关。
-
-发布后又在同一台模拟器上跑了一次**线上配置**（`config_0` 指向 gh-proxy 的 `main/config.json`）：
-设备最终加载的 JAR MD5 = `91c19c17…`，与线上一致；爱看机器人电影分类首屏 10 张卡片里 8 张显示真实海报，
-另 2 张是宿主图床的失败占位。同一段代码多数成功，说明请求头路径已生效，剩下的是单张图超时。
-
-契约检查由 80 项增至 **81 项**（新增「封面附带站点代理要求的 Referer 与 UA 后缀」）。
-
-### 13.4 本轮未能验证
-
-- `--posters` 本轮 0/10（三次），全部卡在搜索步骤的 `Read timed out`，属 12.2 的链路问题。
-  仓库根 `poster-check.json` 仍是 14:31 那份记录，其 URL 是**加后缀之前的格式**，
-  看到别误判成当前实现；下次网络好时重跑 `--posters` 刷新。
-- 仍未在真机（真实电视盒子）确认，只有 Android TV 模拟器。
-
-## 14. 2026-10-29 16:50：封面改回豆瓣直连（本次发布，覆盖 §11 的做法）
-
-§13 补上请求头后封面能显示了，但用户仍反馈「还有看不到封面的」。继续查，问题不在豆瓣，在站点那个封面代理。
-
-### 14.1 实测：慢和失败都来自 imgp2
-
-同一批封面、同一时段：
-
-| 取图路径 | 结果 |
-|---|---|
-| `imgp2.ikanbot.eu.org`（站点代理） | 单张 4–40 秒；连续 4 次请求里 2 次完全不响应（40 秒零字节） |
-| 豆瓣 CDN 直连 + Referer | 连续 12 张 **12/12 成功**，每张 0.10–0.43 秒，全部 200 |
-
-豆瓣图床的最小请求头（同一 URL 只改头）：
-
-| 请求头 | 结果 |
-|---|---|
-| 无 | **418** |
-| 仅 UA | **418** |
-| 仅 Referer | **200**，0.11 秒 |
-
-`imgp2` 是境外 Cloudflare Worker，路径是「客户端 → 出境 → 回到豆瓣 CDN」，慢和偶发无响应都是这一跳造成的；
-客户端图床超时后就会显示失败占位，看起来就是「没封面」。
-
-### 14.2 顺带纠正一处文档错误
-
-`DEVELOPMENT.md` 原先写「`i` 只是缓存名，服务端只认 `u`」。实测相反：**`i` 是缓存键**。
-用「杯雪的 `i` + 黑球的 `u`」请求，返回的是杯雪的图（73008 字节），而用随机 `i` + 黑球的 `u` 才返回黑球的图（26355 字节，MD5 与豆瓣源一致）。
-所以想靠把 `m_ratio_poster` 换成 `s_ratio_poster` 拿小图是无效的——命中缓存后服务端直接吐大图。这条也解释了为什么只能换路径、不能换尺寸。
-
-### 14.3 改动
-
-`Ikanbot.poster()` 对豆瓣域名的封面**直连豆瓣 CDN**，只追加 `@Referer=https://movie.douban.com/`；
-非豆瓣域名仍走本插件代理。这与 `Douban.java` 完全一致，不再经过 `imgp2`。
-`posterId()` 与 `imgp2` 拼接逻辑一并删除（不再有人用），契约测试相应改写：
-80 项（爱看机器人 35 + 爱电影 17 + 豆瓣 28），新增「直连 + Referer」「旧版路径先修正再补 Referer」「非豆瓣不受影响」。
-
-### 14.4 设备验证
-
-**仓库所有者已在手机上使用最新配置，反馈「ikanbot 正常了」**（2026-10-29 16:50）。这是本次改动的最终验收依据。
-
-模拟器这边因为站点 HTML 正在抽风没能复现（宿主直接 `curl` 分类页 3 次只成 1 次，成功 9.5 秒、另两次 35 秒超时；
-模拟器里分类请求返回 `爱看机器人：Read timed out` / `timeout`，页面「Nothing here」），
-同一时刻豆瓣图床稳定 0.29 秒，所以上面的测量结论仍然成立，只是没能在模拟器里"看着它加载"。
-
-未取样：手机上封面加载的具体耗时、一页 24 张里全部出图的比例。若之后仍偶发空白，按 §14.1 的方法对照即可。
-
-
-
-
+- [docs/REFERENCES.md](docs/REFERENCES.md)：宿主源码（固定提交）、站点当前页面、公开 JS 定位词、官方文档。站点域名与 JS chunk 会变，按里面的定位方法重查。
+- [docs/JAR_GUIDE.md](docs/JAR_GUIDE.md)：SPI 方法签名、打包边界、播放器 JSON 格式。
+- [docs/RELEASING.md](docs/RELEASING.md)：发布、校验、回滚。
+- [docs/HISTORY.md](docs/HISTORY.md)：每次改动的原因与证据。
+- [DEVELOPMENT.md](DEVELOPMENT.md)、[DOUBAN.md](DOUBAN.md)、[IVDY.md](IVDY.md)：各站点实现细节。

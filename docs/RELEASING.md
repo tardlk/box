@@ -9,7 +9,7 @@
 |---|---|
 | 根目录 `config.json` / `ikanbot.jar` / `ikanbot.jar.md5` | GitHub 当前在线版本，配置里的 JAR 是 gh-proxy 加速绝对地址 |
 | `jar/box-<md5>.jar` | 已发布的固定内容文件；旧配置可继续引用，禁止覆盖不同字节 |
-| 根目录 `config-日期-主题.json` | 发布快照，避开配置加速缓存；不覆盖历史版本 |
+| 根目录 `config-日期-主题.json` | 发布快照，避开配置加速缓存；历史快照按日期原样保留（有人存过旧链接），**不要删、不要覆盖** |
 | `dist/` | 本机构建输出；其中 config 使用相对 JAR 地址，不能直接替换线上配置 |
 | `build/release/` | `prepare_release.py` 生成的发布暂存目录，不自动上传 |
 | 根目录各 `*-check.json` / `*-verification.json` | 随发布保留的验证证据；注明采样日期和失败，不等于本轮已重新实测 |
@@ -22,7 +22,7 @@
 ```bash
 bash build.sh
 bash test.sh
-# 根据改动，选择相关实网检查：--posters / --live / --ivdy
+# 根据改动，选择相关实网检查：--live / --posters / --ivdy / --douban
 python3 scripts/prepare_release.py --output build/release --snapshot config-20261029-example.json
 python3 scripts/verify_release.py --directory build/release
 ```
@@ -70,8 +70,8 @@ PY
 不要盲目 `git add .`；`dist/`、本机路径、.publish 暂存、缓存、凭据和临时抓包不属于提交内容。
 不要 force push 掩盖远端新提交；若并发修改，先获取并解决冲突。
 
-这次交接前，原本机目录不是 Git 克隆，发布通过已授权的 GitHub 连接器完成。
-新接手环境有正常 Git 认证时不必模仿这个限制，也不能假定一定安装了 gh。
+早先的发布是在一个没有 `.git` 的目录里通过 GitHub 连接器完成的。
+有正常 Git 认证时直接 `git push` 即可，但不要假定一定装了 `gh`。
 
 ## 4. 只有 GitHub 连接器时
 
@@ -104,12 +104,9 @@ python3 scripts/verify_release.py \
 
 ## 6. 回滚
 
-优先还原旧版本 `config.json`、`ikanbot.jar`、md5 与对应 build-report，或者将配置重新指向历史固定 JAR。
+优先还原旧版本 `config.json`、`ikanbot.jar`、md5 与对应 build-report，或者把配置重新指向历史固定 JAR。
 保持 JSON 引用、JAR 实际字节与 MD5 一致。通过新的回滚提交完成，不改写历史文件或强推重置。
-本次交接前的固定版本为：
 
-```text
-jar/box-7b075ad627b2d5cbbfc29f253d3b3b1c.jar
-```
-
-它包含 ikanbot 与 Ivdy。恢复该版本不会解决已记录的 Ivdy CDN IP 拒绝问题。
+要回滚时，从 [HANDOFF.md](../HANDOFF.md) 第 1 节取上一版 JAR 名（那里按发布时间列了最近几版），
+或者按 `config-日期-主题.json` 找当时的快照，它们引用的 JAR 都还在 `jar/` 里。
+不要在这里写死版本号——它会随每次发布过期。

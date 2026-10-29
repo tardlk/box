@@ -5,6 +5,7 @@
 - [docs/JAR_GUIDE.md](docs/JAR_GUIDE.md)：构建环境、Spider SPI、新增站点步骤。
 - [docs/REFERENCES.md](docs/REFERENCES.md)：优先查宿主源码、站点当前页面和公开 JS；含固定版本链接与定位词。
 - [docs/RELEASING.md](docs/RELEASING.md)：准备发布文件、MD5、加速地址、原子提交及回滚。
+- [docs/HISTORY.md](docs/HISTORY.md)：每次改动的原因、证据，以及当时没验证的部分。
 
 工作约定：
 

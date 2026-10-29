@@ -13,9 +13,14 @@ import javax.imageio.ImageIO;
 
 /**
  * Opt-in live regression for the poster path the client actually uses.
- * Cards hand out the site's own poster proxy, so this checks those URLs return real images.
+ *
+ * <p>Cards hand out a Douban CDN address with an {@code @Referer=} suffix that the host's ImgUtil
+ * turns into a request header. This strips the suffix, sends the same Referer, and checks the bytes
+ * decode as a real poster -- a non-empty URL is not the same thing as a usable image.
  */
 public final class PosterTest {
+    private static final String REFERER = "https://movie.douban.com/";
+
     public static void main(String[] args) throws Exception {
         Ikanbot spider = new Ikanbot();
         JSONArray entries = new JSONObject(spider.searchContent("老友记", false, "1")).getJSONArray("list");
@@ -24,11 +29,16 @@ public final class PosterTest {
         boolean firstSeason = false;
         for (int i = 0; i < entries.length(); i++) {
             JSONObject entry = entries.getJSONObject(i);
-            String url = entry.getString("vod_pic");
-            if (!url.startsWith("https://imgp2.ikanbot.eu.org/")) {
-                throw new AssertionError("封面没走站点代理: " + entry.getString("vod_name") + " " + url);
+            String poster = entry.getString("vod_pic");
+            int cut = poster.indexOf('@');
+            if (cut < 0 || !poster.substring(cut).contains("@Referer=" + REFERER)) {
+                throw new AssertionError("封面缺少宿主认识的 Referer 后缀: " + entry.getString("vod_name") + " " + poster);
             }
-            HttpURLConnection connection = SiteHttp.open(url, SiteHttp.ROOT + "/");
+            String url = poster.substring(0, cut);
+            if (!url.matches("https://img\\d\\.doubanio\\.com/[^@]+\\.(?:jpe?g|png|webp)")) {
+                throw new AssertionError("封面不是豆瓣直连地址: " + entry.getString("vod_name") + " " + url);
+            }
+            HttpURLConnection connection = SiteHttp.open(url, REFERER);
             int status;
             String mime;
             byte[] bytes;
@@ -52,7 +62,8 @@ public final class PosterTest {
         }
         if (!firstSeason) throw new AssertionError("搜索结果缺少第一季，未覆盖本次故障");
         JSONObject report = new JSONObject().put("checked_at", Instant.now().toString()).put("query", "老友记")
-                .put("path", "site-poster-proxy").put("first_season_verified", firstSeason).put("posters", checked);
+                .put("path", "douban-direct").put("referer", REFERER)
+                .put("first_season_verified", firstSeason).put("posters", checked);
         Files.write(Paths.get("dist/poster-check.json"), (report.toString(2) + "\n").getBytes(StandardCharsets.UTF_8));
     }
 }

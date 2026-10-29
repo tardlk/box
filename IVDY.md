@@ -1,7 +1,7 @@
 # 爱电影 · ivdy.com
 
 FongMi 影视 5.x 入口：`com.github.catvod.spider.Ivdy`，配置使用 `csp_Ivdy`。
-与爱看机器人共用当前构建 JAR。默认配置同时提供两个站点。
+与爱看机器人、豆瓣导航共用同一个构建 JAR。
 
 ## 实现
 
@@ -24,7 +24,7 @@ FongMi 影视 5.x 入口：`com.github.catvod.spider.Ivdy`，配置使用 `csp_I
 ## 验证与限制（2026-10-29 复测）
 
 运行 `bash build.sh`、`bash test.sh`；实网检查使用 `bash test.sh --ivdy`。
-本地检查包含原有 30 项和爱电影新增的 16 项，分别检查分页、签名、选集与访问条件。
+爱电影契约 17 项（分页、签名、选集、画质与访问条件），全库共 80 项。
 实网结果记录在 `dist/ivdy-verification.json`。播放清单未通过时实网命令返回退出码 2，不记为播放通过。
 
 2026-10-28 的测试网络访问视频 CDN 返回 HTTP 403，正文为 `the source ip is forbidden`，原站浏览器播放器同样失败。

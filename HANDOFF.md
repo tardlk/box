@@ -2,6 +2,9 @@
 
 更新：2026-10-29（Asia/Shanghai）。先读本页，再查链接中的具体代码。
 
+> 换新会话 / 换账号接手：把 [docs/NEXT_AI.md](docs/NEXT_AI.md) 里的提示词整段发给对方即可，
+> 那段自带仓库地址、硬性约束和新会话需要的上下文。
+
 ## 1. 项目与交付目标
 
 仓库：[tardlk/box](https://github.com/tardlk/box)，当前发布分支 `main`。

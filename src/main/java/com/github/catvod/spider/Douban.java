@@ -28,6 +28,7 @@ public final class Douban extends Spider {
     private static final String API = "https://frodo.douban.com/api/v2";
     private static final String KEY = "?apikey=0ac44ae016490db2204ce0a042db2916";
     private static final String REFERER = "https://servicewechat.com/wx2f9b06c1de1ccfca/84/page-frame.html";
+    private static final String IMAGE_REFERER = "https://movie.douban.com/";
     // This key belongs to Douban's WeChat mini program; a plain browser User-Agent is answered with
     // HTTP 400 / code 997 instead of data, so the client identity has to be kept.
     private static final String UA = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -191,7 +192,10 @@ public final class Douban extends Spider {
         JSONObject pic = item.optJSONObject("pic");
         String url = pic == null ? "" : pic.optString("normal").trim();
         if (url.isEmpty()) url = item.optString("cover_url").trim();
-        return url.isEmpty() ? "" : Proxy.url(this, "douban", url);
+        if (!SiteHttp.publicUrl(url)) return "";
+        // FongMi's ImgUtil pulls "@Referer=" / "@User-Agent=" out of the picture URL and strips it
+        // before loading, so the client fetches Douban's image CDN directly instead of via our proxy.
+        return url + "@Referer=" + IMAGE_REFERER;
     }
 
     static String remarks(JSONObject item) {

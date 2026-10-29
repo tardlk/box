@@ -17,6 +17,19 @@ if (id.isEmpty() || id.startsWith(SEARCH_PREFIX)) detailEmpty(false);
 所以卡片的 `vod_id` 是 `msearch:<豆瓣ID>`，冒号后面的值只是标记来源，宿主真正用的是片名。
 这条链路要求**片名准确**，因此本实现用原始标题，不做会把 `#`、`$` 转成全角的清洗（那是 `vod_play_url` 分隔符的需要）。
 
+宿主对 `msearch:` 的处理是**自动搜索并自动播放**，不会先给一个来源列表让人挑：
+
+```java
+// VodFallbackPolicy：emptyDetail → fallbackToNextSource(false) → search(name, true)
+state.setSelectFirstSource(autoFallback);   // true
+...
+if (state.isSelectFirstSource() && state.hasSources()) nextSource();   // 直接播第一个
+```
+
+筛选条件见 `mismatch()`：自动流程要求**片名完全相等**，然后取搜索结果里的第一个可用来源播放。
+想要「先看搜索结果再选源」，只能走宿主自己的搜索页（它会列出各站结果）；点豆瓣卡片这条路没有选择环节。
+这是宿主行为，不是本项目能改的，参考实现也一样。
+
 ## 为什么 `searchable: 0`
 
 本站点如果开启搜索，搜索结果仍然是 `msearch:` 卡片，点进去又触发一次全站搜索，会绕回自己形成循环。
@@ -45,14 +58,21 @@ lushunming 的参考实现同样设为不可搜索（`json/index.json` 中 `"sea
 `show_chinese_best_weekly`、`show_global_best_weekly`。
 榜单只接受这份白名单，避免把外部传入的字符串直接拼进路径。
 
-## 必须保留的请求身份（容易踩的两处）
+## 必须保留的请求身份（容易踩的一处）
 
-1. **接口只认微信小程序 UA**。同一个 `apikey` 用普通浏览器 UA 请求会返回 HTTP 400、正文 `{"code":997,"msg":"invalid_request_997"}`。
-   实测交替发送微信 UA 与 Chrome UA：微信 UA 稳定 200，Chrome UA 稳定 997。所以 `Douban.UA` 不能换成通用的 `SiteHttp.UA`。
-   Referer 用 `https://servicewechat.com/wx2f9b06c1de1ccfca/84/page-frame.html`。
-2. **封面 CDN 要求像浏览器加载图片**。不带 `Accept: image/...` 时 `img*.doubanio.com` 返回 418（正文 `cdn error 001`）。
-   封面走本项目的图片代理，代理已统一补 `Accept`、UA 与豆瓣 Referer，客户端看到的是代理地址。
-   豆瓣图片 URL 本身不需要 Referer，因此代理失败时会退回原始地址，仍能显示。
+**接口只认微信小程序 UA**。同一个 `apikey` 用普通浏览器 UA 请求会返回 HTTP 400、正文 `{"code":997,"msg":"invalid_request_997"}`。
+实测交替发送微信 UA 与 Chrome UA：微信 UA 稳定 200，Chrome UA 稳定 997。所以 `Douban.UA` 不能换成通用的 `SiteHttp.UA`。
+Referer 用 `https://servicewechat.com/wx2f9b06c1de1ccfca/84/page-frame.html`。
+
+## 封面为什么是直连加 `@Referer=`
+
+`vod_pic` 形如 `https://img3.doubanio.com/.../p480747492.jpg@Referer=https://movie.douban.com/`。
+宿主 `ImgUtil.getUrl` 会从这个地址里取出 `@Referer=` / `@User-Agent=` 加为请求头，再把后缀去掉后才加载
+（`app/src/main/java/com/fongmi/android/tv/utils/ImgUtil.java`）。因此封面由客户端直接向豆瓣 CDN 取，不经过本项目的图片代理。
+
+这样做的原因：参考实现也是这么写的，而本项目的图片代理对豆瓣是多余的一跳。**不要把封面改回走 `Proxy`。**
+2026-10-29 曾误判「封面必须带 `Accept: image/*` 才不被拒」，实测不带该头、不带 Referer 都是 200；
+当时那些 418（正文 `cdn error 001`）是短时间内连续请求触发的 IP 级限流，静默几十秒即恢复。
 
 ## 字段与展示
 
@@ -64,11 +84,12 @@ lushunming 的参考实现同样设为不可搜索（`json/index.json` 中 `"sea
 
 ```bash
 bash build.sh
-bash test.sh            # 73 项本地检查，其中豆瓣 26 项
+bash test.sh            # 74 项本地检查，其中豆瓣 27 项
 bash test.sh --douban   # 实网：首页、七个分类、筛选、榜单第二页、真实封面
 ```
 
-2026-10-29 实网结果：七个分类各 20 条（榜单默认 10 条），筛选与 Top250 第二页正常，封面 270x405、20432 字节（走代理）。记录见 `dist/douban-verification.json`。
+2026-10-29 实网结果：七个分类各 20 条（榜单默认 10 条），筛选与 Top250 第二页正常，封面 270x405、20432 字节（直连）。
+记录见 `dist/douban-verification.json`。
 
 限制：
 

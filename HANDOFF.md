@@ -28,7 +28,7 @@ https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.js
 | 爱电影 `csp_Ivdy` | 分类、筛选、分页、搜索、详情、封面、选集和取址接口通过实网检查；2026-10-29 用户确认设备上可播放 | 声音、拖动与弱性能盒子的解码表现未单独确认；播放可用不等于各画质都稳定 |
 | 爱电影画质 | 2026-10-29 起默认取最高分辨率，复测电影样例实际选中 1080p 并取到有效分片；同画质优先 `flag=true` | 接口对 720/1080 仍标 `needLogin=true`。放开高分档是仓库所有者的决定（2026-10-29 明确要求），不是技术判断；不要反过来又按标注降级 |
 | 豆瓣导航 `csp_Douban` | 七个分类、首页推荐、筛选、Top250 翻页、封面代理通过实网检查（2026-10-29） | 它是导航站：`vod_id` 用 `msearch:` 前缀，靠片名交给影视站搜索，本身无详情与播放。`searchable` 必须是 0，否则点卡片会绕回搜索 |
-| 本地测试 | 爱看机器人 30 + 爱电影 17 + 豆瓣 26，共 73 项通过（2026-10-29） | 历史记录不能当成本轮新测试；没有连接 Android 真机 |
+| 本地测试 | 爱看机器人 30 + 爱电影 17 + 豆瓣 27，共 74 项通过（2026-10-29） | 历史记录不能当成本轮新测试；没有连接 Android 真机 |
 
 如果爱电影播放再次失败，先在当前网络对照原站，再比较接口与媒体请求；保留失败正文。
 已确认 `403 the source ip is forbidden` 是 CDN 按来源 IP 放行造成的，换 Referer、换新鲜令牌都不会改变结果，
@@ -90,7 +90,7 @@ SDK 需要 `platforms/android-30/android.jar` 和 `build-tools/35.0.0/d8`；还�
 ## 6. 按需验证与接手优先级
 
 ```bash
-bash test.sh             # 73 项本地检查；先构建
+bash test.sh             # 74 项本地检查；先构建
 bash test.sh --posters   # ikanbot 老友记 10 季图片代理，检查真实图片
 bash test.sh --live      # ikanbot 首页/分类/搜索/详情/HLS
 bash test.sh --ivdy      # 爱电影完整接口；没有可访问 HLS 时退出码 2
@@ -152,15 +152,19 @@ bash test.sh --douban    # 豆瓣七个分类/筛选/榜单翻页/封面代理
 2. **`searchable` 必须是 0**。否则搜索结果还是 `msearch:` 卡片，点进去又触发搜索，绕回自己。
    参考实现同样设为 0（`json/index.json` 的「豆瓣仅推荐」）。
 3. **接口只认微信小程序 UA**。同一 `apikey` 配 Chrome UA 稳定返回 HTTP 400 / `code 997`；交替实测确认过。
-   不能把 `Douban.UA` 换成通用的 `SiteHttp.UA`，因此 `SiteHttp.open` 增加了带 UA 的重载。
-4. **封面要像浏览器加载图片**。缺 `Accept: image/*` 时 `img*.doubanio.com` 返回 418 `cdn error 001`。
-   已在 `Proxy.proxy` 统一补 `Accept`，ikanbot 的海报同时受益；豆瓣图片本身不校验 Referer，代理失败还能退回原地址。
+   不能把 `Douban.UA` 换成通用的 `SiteHttp.UA`，因此 `SiteHttp.open` 增加了带 UA 的重载——这是本次唯一改动的共用代码。
+4. **封面是直连地址加 `@Referer=` 后缀**，由宿主 `ImgUtil.getUrl` 解析出请求头再加载，不要改回走 `Proxy`。
+   2026-10-29 曾误判「封面必须带 `Accept: image/*`」，已更正：那些 418 是连续请求触发的 IP 级限流，不是缺头。
 
-顺带做的重构：`Proxy.url(spider, tag, original)` 抽出，`Ikanbot.image` 改为调用它，行为不变。
-回归跑了 `--live`、`--posters`（10/10）、`--ivdy`（HLS 通过），确认没有影响两个已有站点。
+第一版把封面接到了 `Proxy` 上，并为此抽出 `Proxy.url`、把 `Ikanbot.image` 改成调用它。设备上看不到豆瓣封面后已整体还原：
+`Proxy.java`、`Ikanbot.java` 与加豆瓣之前逐字节一致，豆瓣改为直连 URL。加这个站点最终只新增 `Douban.java` 和一处 `SiteHttp` 重载。
+
+关于「点卡片没有选源」：宿主对 `msearch:` 是自动搜索 + 自动播放第一个片名完全相等的结果（`VodFallbackPolicy` 的
+`setSelectFirstSource(true)` → `nextSource()`），没有让用户挑的环节。想要列表只能走宿主自己的搜索页。
+这是宿主行为，不要试图在 spider 里加「选择」；参考实现同样如此。
 
 分类设计上把剧集筛选与综艺筛选拆成两个分类：豆瓣的 `tags` 之间是「与」关系，
 电视剧形式与综艺形式放在同一组会互相冲突，选两个就查不到东西。
 
-验证：73 项契约检查（30 + 17 + 26）全过；`--douban` 七个分类各 20 条、榜单 10 条、Top250 第二页、封面 270x405 走代理成功。
+验证：74 项契约检查（30 + 17 + 27）全过；`--douban` 七个分类各 20 条、榜单 10 条、Top250 第二页、封面 270x405 直连成功。
 仍未确认：真机上的卡片点击、跨站搜索结果聚合与遥控器操作。

@@ -3,13 +3,10 @@ package com.github.catvod.spider;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import javax.imageio.ImageIO;
 
@@ -57,22 +54,23 @@ public final class DoubanLiveTest {
         report.put("rank_top250_page2", second.optJSONArray("list").length());
         System.out.println("DOUBAN LIVE PASS rank_top250_page2 " + second.optJSONArray("list").length() + " 条");
 
-        // The poster goes through the same proxy the client uses, so the image headers are covered too.
-        String pic = first.getString("vod_pic");
-        Object[] response = Proxy.proxy(Collections.singletonMap("image", Proxy.register(pic)));
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        try (InputStream stream = (InputStream) response[2]) {
-            byte[] chunk = new byte[8192];
-            int size;
-            while ((size = stream.read(chunk)) != -1) buffer.write(chunk, 0, size);
-        }
-        byte[] bytes = buffer.toByteArray();
+        // The card carries the "@Referer=" suffix the host strips before loading, so check the
+        // address the client will actually request.
+        String pic = first.getString("vod_pic").split("@")[0];
+        java.net.HttpURLConnection connection = SiteHttp.open(pic, "https://movie.douban.com/");
+        int status;
+        String mime;
+        byte[] bytes;
+        try {
+            status = connection.getResponseCode();
+            mime = connection.getContentType();
+            bytes = SiteHttp.read(connection, 4 * 1024 * 1024);
+        } finally { connection.disconnect(); }
         java.awt.image.BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));
-        if (!Integer.valueOf(200).equals(response[0]) || !response[1].toString().startsWith("image/")
-                || image == null || image.getWidth() < 100) {
-            throw new AssertionError("封面不是有效图片: " + response[0] + " " + response[1]);
+        if (status != 200 || mime == null || !mime.startsWith("image/") || image == null || image.getWidth() < 100) {
+            throw new AssertionError("封面不是有效图片: " + status + " " + mime);
         }
-        report.put("poster", new JSONObject().put("status", response[0]).put("mime", response[1].toString())
+        report.put("poster", new JSONObject().put("status", status).put("mime", mime)
                 .put("bytes", bytes.length).put("width", image.getWidth()).put("height", image.getHeight()));
         System.out.println("DOUBAN LIVE PASS poster " + image.getWidth() + "x" + image.getHeight() + " " + bytes.length + " bytes");
 

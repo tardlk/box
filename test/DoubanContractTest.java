@@ -29,7 +29,11 @@ public final class DoubanContractTest {
         check(card.getString("vod_id").equals("msearch:1292052"), "卡片用 msearch 前缀交给宿主搜索");
         check(card.getString("vod_name").equals("肖申克的救赎"), "片名去掉首尾空白");
         check(card.getString("vod_remarks").equals("豆瓣 9.7 · 1994"), "评分与年份拼成备注");
-        check(!card.getString("vod_pic").isEmpty(), "封面带上可用的图片地址");
+        check(card.getString("vod_pic").equals("https://img3.doubanio.com/view/photo/s_ratio_poster/public/p480747492.jpg"
+                + "@Referer=https://movie.douban.com/"), "封面直连并附加宿主认识的 Referer 后缀");
+        JSONObject local = new JSONObject().put("id", "3").put("title", "本机图")
+                .put("pic", new JSONObject().put("normal", "http://127.0.0.1/x.jpg"));
+        check(spider.card(local).getString("vod_pic").isEmpty(), "封面对非公网地址返回空");
 
         JSONObject unrated = new JSONObject().put("id", "1").put("title", "无评分")
                 .put("rating", new JSONObject().put("value", 0)).put("card_subtitle", "2026 / 中国大陆 / 剧情");

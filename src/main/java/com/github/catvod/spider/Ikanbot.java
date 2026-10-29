@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,7 +149,23 @@ public final class Ikanbot extends Spider {
         } catch (Exception failure) { return error(failure); }
     }
 
-    private String image(String original) { return Proxy.url(this, "ikanbot", original); }
+    private String image(String original) {
+        if (!SiteHttp.publicUrl(original)) return "";
+        String asset = Proxy.register(original);
+        Map<String, String> params = Collections.singletonMap("image", asset);
+        try {
+            Object url = Spider.class.getMethod("getProxyUrl", Map.class).invoke(this, params);
+            if (url instanceof String && !((String) url).isEmpty()) return (String) url;
+        } catch (Exception ignored) { }
+        try {
+            Class<?> helper = Class.forName("com.github.catvod.Proxy");
+            String base;
+            try { base = (String) helper.getMethod("getUrl", boolean.class).invoke(null, true); }
+            catch (NoSuchMethodException ignored) { base = (String) helper.getMethod("getUrl").invoke(null); }
+            if (base != null && !base.isEmpty()) return base + "?do=ikanbot&image=" + asset;
+        } catch (Exception ignored) { }
+        return original;
+    }
 
     @Override public Object[] proxy(Map<String, String> params) throws Exception { return Proxy.proxy(params); }
 

@@ -11,7 +11,6 @@ import java.util.UUID;
 
 /** Image requests reference an in-memory ID, never an arbitrary URL parameter. */
 public final class Proxy {
-    private static final String IMAGE_ACCEPT = "image/avif,image/webp,image/apng,image/*,*/*;q=0.8";
     private static final Map<String, String> images = Collections.synchronizedMap(new LinkedHashMap<String, String>(128, .75f, true) {
         @Override protected boolean removeEldestEntry(Map.Entry<String, String> item) { return size() > 1000; }
     });
@@ -20,29 +19,6 @@ public final class Proxy {
         String id = UUID.randomUUID().toString();
         images.put(id, url);
         return id;
-    }
-
-    /**
-     * Client-facing URL for an image that needs its own headers, e.g. Douban's image CDN
-     * answers 418 unless the request looks like a browser image load.
-     * Falls back to the original URL when the host offers no proxy entry point.
-     */
-    public static String url(Object spider, String tag, String original) {
-        if (!SiteHttp.publicUrl(original)) return "";
-        String asset = register(original);
-        Map<String, String> params = Collections.singletonMap("image", asset);
-        try {
-            Object url = spider.getClass().getMethod("getProxyUrl", Map.class).invoke(spider, params);
-            if (url instanceof String && !((String) url).isEmpty()) return (String) url;
-        } catch (Exception ignored) { }
-        try {
-            Class<?> helper = Class.forName("com.github.catvod.Proxy");
-            String base;
-            try { base = (String) helper.getMethod("getUrl", boolean.class).invoke(null, true); }
-            catch (NoSuchMethodException ignored) { base = (String) helper.getMethod("getUrl").invoke(null); }
-            if (base != null && !base.isEmpty()) return base + "?do=" + tag + "&image=" + asset;
-        } catch (Exception ignored) { }
-        return original;
     }
 
     public static Object[] proxy(Map<String, String> params) throws Exception {
@@ -59,7 +35,6 @@ public final class Proxy {
                     }
                 }
                 connection = SiteHttp.open(target, host.endsWith("doubanio.com") ? "https://movie.douban.com/" : SiteHttp.ROOT + "/");
-                connection.setRequestProperty("Accept", IMAGE_ACCEPT);
                 connection.setInstanceFollowRedirects(false);
                 int status = connection.getResponseCode();
                 if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {

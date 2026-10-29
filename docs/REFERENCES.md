@@ -106,15 +106,17 @@ rg -n 'getProxyUrl|getActivity|searchContent|playerContent|destroy' catvod/src/m
 | 卡片字段 | `id`（纯数字才是影片）、`title`、`pic.normal`、`cover_url`、`rating.value`、`card_subtitle`、`year` |
 | 导航跳转 | `vod_id` 用 `msearch:` 前缀，宿主见 `VodPlaybackController.checkId` |
 
-2026-10-29 实测的两个硬性条件，重新定位时先复现这两条：
+2026-10-29 实测的硬性条件，重新定位时先复现：
 
 1. **User-Agent 必须是小程序 UA**（`MicroMessenger/... MiniProgramEnv/...`）。
    换成 Chrome UA 会得到 HTTP 400、正文 `{"code":997,"msg":"invalid_request_997"}`；交替发送可稳定复现。
-2. **封面请求要带 `Accept: image/...`**。缺失时 `img*.doubanio.com` 返回 418、正文 `cdn error 001`；
-   带头后 200 且 `cache-control: max-age=31536000`。豆瓣图片不校验 Referer。
+2. **封面不要走图片代理**。`vod_pic` 用直连地址加 `@Referer=<值>` 后缀即可：
+   宿主 `app/src/main/java/com/fongmi/android/tv/utils/ImgUtil.java` 的 `getUrl` 会把 `@Referer=`、`@User-Agent=`、
+   `@Headers=`、`@Cookie=` 取出加为请求头，再用 `url.split("@")[0]` 去掉后缀。参考实现也这样用。
 
 `code 997` 也可能是短时间请求过多触发的限流（曾在一分钟内连发十余次后出现，静默数十秒恢复）。
-本项目把它翻成可读提示，不做本地缓存；判断是真限流还是 UA 不对，用交替发送对照。
+本条曾把「封面必须带 `Accept: image/*`」当成硬性条件，属误判：不带该头、不带 Referer 实测都是 200，
+当时的 418（`cdn error 001`）是连续请求触发的 IP 级限流。判断是真限流还是 UA 不对，用交替发送对照。
 
 ## 6. 工具和依赖的官方文档
 

@@ -35,12 +35,15 @@ public final class IvdyContractTest {
         try { IvdyParser.detail(new JSONObject(source.toString()).put("episodeList", new JSONArray()), "122951"); } catch (Exception expected) { empty = true; }
         check(empty, "无选集时不生成占位播放项");
         JSONObject hd = new JSONObject().put("needLogin", true).put("flag", false).put("resolution", 1080).put("url", "https://media.example.com/hd.m3u8");
+        JSONObject md = new JSONObject().put("needLogin", true).put("flag", false).put("resolution", 720).put("url", "https://media.example.com/md.m3u8");
         JSONObject sd = new JSONObject().put("needLogin", false).put("flag", true).put("resolution", 480).put("url", "https://media.example.com/sd.m3u8");
-        JSONObject data = new JSONObject().put("list", new JSONArray().put(hd).put(sd));
-        check(IvdyParser.playable(data).getInt("resolution") == 480, "遵循站点未登录默认画质");
+        JSONObject data = new JSONObject().put("list", new JSONArray().put(sd).put(md).put(hd));
+        check(IvdyParser.playable(data).getInt("resolution") == 1080, "默认选择最高画质，不因登录标记降级");
+        JSONObject hdFlag = new JSONObject().put("needLogin", true).put("flag", true).put("resolution", 1080).put("url", "https://media.example.com/hd-default.m3u8");
+        check(IvdyParser.playable(new JSONObject().put("list", new JSONArray().put(hd).put(hdFlag))).optBoolean("flag"), "同画质时优先站点标记的默认线路");
         boolean denied = false;
-        try { IvdyParser.playable(new JSONObject().put("list", new JSONArray().put(hd))); } catch (Exception expected) { denied = true; }
-        check(denied, "没有公开画质时明确报告需要登录");
+        try { IvdyParser.playable(new JSONObject().put("list", new JSONArray().put(new JSONObject().put("resolution", 1080)))); } catch (Exception expected) { denied = true; }
+        check(denied, "没有媒体地址时报告无可用线路");
         denied = false;
         try { IvdyParser.playable(new JSONObject().put("list", new JSONArray().put(new JSONObject().put("needLogin", false).put("url", "http://127.0.0.1/x.m3u8")))); } catch (Exception expected) { denied = true; }
         check(denied, "拒绝非公网媒体 URL");

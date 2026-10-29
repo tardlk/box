@@ -62,6 +62,18 @@ public final class IvdyLiveTest {
             JSONObject play = new JSONObject(spider.playerContent("默认线路", id, Collections.emptyList()));
             if (play.optInt("parse", -1) != 0 || !SiteHttp.mediaUrl(play.optString("url"))) throw new AssertionError(play.toString());
             JSONObject item = new JSONObject().put("sample", sample[0]).put("api_play_url", "passed");
+            String[] parts = id.split(":");
+            JSONObject offered = new IvdyApi().get("/anonymous/v2/video/episode/url",
+                    Ivdy.params("clientType", "1", "id", parts[1], "nid", parts[2]));
+            JSONArray tiers = new JSONArray();
+            JSONArray offeredList = offered.optJSONArray("list");
+            if (offeredList != null) for (int i = 0; i < offeredList.length(); i++) {
+                JSONObject tier = offeredList.optJSONObject(i);
+                if (tier != null) tiers.put(new JSONObject().put("resolution", tier.optInt("resolution"))
+                        .put("needLogin", tier.optBoolean("needLogin")).put("flag", tier.optBoolean("flag")));
+            }
+            JSONObject chosen = IvdyParser.playable(offered);
+            item.put("tiers", tiers).put("selected_resolution", chosen.optInt("resolution"));
             JSONObject headers = new JSONObject(play.getString("header"));
             HttpURLConnection connection = SiteHttp.open(play.getString("url"), headers.getString("Referer"));
             try {

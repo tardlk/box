@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-29T01:49:52.341529Z",
+  "checked_at": "2026-10-29T01:54:45.595570Z",
   "detail_movie": 1,
   "movie_episode_count": 1,
   "tv_poster": {
@@ -10,17 +10,41 @@
   "category_88": 24,
   "media": [
     {
-      "host": "ppvod011.blbtgg.com",
+      "tiers": [
+        {
+          "flag": false,
+          "needLogin": true,
+          "resolution": 1080
+        },
+        {
+          "flag": false,
+          "needLogin": true,
+          "resolution": 720
+        },
+        {
+          "flag": true,
+          "needLogin": false,
+          "resolution": 480
+        }
+      ],
+      "host": "ppvod01.kqgfbs.com",
       "api_play_url": "passed",
       "manifest_http_status": 200,
       "sample": "movie",
-      "manifest_characters": 181288
+      "selected_resolution": 1080,
+      "manifest_characters": 163689
     },
     {
+      "tiers": [{
+        "flag": true,
+        "needLogin": false,
+        "resolution": 720
+      }],
       "host": "ppvod011.blbtgg.com",
       "api_play_url": "passed",
       "manifest_http_status": 200,
       "sample": "tv",
+      "selected_resolution": 720,
       "manifest_characters": 35629
     }
   ],

@@ -69,15 +69,22 @@ final class IvdyParser {
 
     static JSONObject playable(JSONObject data) throws Exception {
         JSONArray list = data.optJSONArray("list");
-        JSONObject fallback = null;
+        JSONObject selected = null;
         if (list != null) for (int i = 0; i < list.length(); i++) {
             JSONObject item = list.optJSONObject(i);
-            if (item == null || item.optBoolean("needLogin", true) || !SiteHttp.mediaUrl(item.optString("url"))) continue;
-            if (item.optBoolean("flag")) return item;
-            if (fallback == null || item.optInt("resolution") > fallback.optInt("resolution")) fallback = item;
+            // The site labels 720p/1080p as needLogin but serves them to anonymous requests,
+            // so the resolution decides instead of the label. Only the URL still has to be usable.
+            if (item == null || !SiteHttp.mediaUrl(item.optString("url"))) continue;
+            if (selected == null || preferred(item, selected)) selected = item;
         }
-        if (fallback == null) throw new Exception("当前剧集需要登录，或没有可用的公开线路");
-        return fallback;
+        if (selected == null) throw new Exception("当前剧集没有可用的播放线路");
+        return selected;
+    }
+
+    private static boolean preferred(JSONObject candidate, JSONObject current) {
+        int difference = candidate.optInt("resolution") - current.optInt("resolution");
+        if (difference != 0) return difference > 0;
+        return candidate.optBoolean("flag") && !current.optBoolean("flag");
     }
 
     static JSONArray filters(JSONObject source, String type) throws Exception {

@@ -9,7 +9,9 @@
       "searchable": 0,
       "filterable": 1,
       "changeable": 1,
-      "timeout": 30
+      "timeout": 30,
+      "indexs": 1,
+      "quickSearch": 0
     },
     {
       "key": "ikanbot_fresh",

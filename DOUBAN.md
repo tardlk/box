@@ -27,6 +27,21 @@ if (id.isEmpty() || id.startsWith(SEARCH_PREFIX)) detailEmpty(false);
 `setSelectFirstSource(true)` → `nextSource()`），能不能走到「先搜索再选源」，取决于宿主版本对前缀后面这段内容的处理；
 保持一致的做法是像 JS 脚本那样把片名放进去，而不是断言某个具体行为。
 
+## 为什么必须带 `indexs: 1`
+
+宿主把 `indexs == 1` 的站点当「导航站」，点卡片时不直接进播放页，而是带着片名跳到检索页面：
+
+| 版本 | 点卡片后 |
+|---|---|
+| 手机版 | `TypeFragment` → `SearchActivity.start(name)`，搜索页 |
+| 电视版 | `TypeFragment` → `CollectActivity.start(name)`，按关键词的聚合页 |
+
+没有这个字段时，宿主走 `VideoActivity.start(...)`，由播放控制器自动搜同名结果并**直接开播第一个**。
+2026-10-29 实测：同一台设备、同一批影视站，只把站点配置从我们这版换成仓库所有者的 JS 版（带 `indexs: 1`），
+点击行为就变成进搜索页。差别只在这一个字段，与爬虫是 Java 还是 JS 无关。
+
+**不要删这个字段**，否则退化成“点一下就播”，用户失去选源机会。
+
 ## 为什么 `searchable: 0`
 
 本站点如果开启搜索，搜索结果仍然是 `msearch:` 卡片，点进去又触发一次全站搜索，会绕回自己形成循环。

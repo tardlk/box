@@ -44,7 +44,10 @@ config = {
     # 站点顺序即首页 Tab 顺序，第一个是默认打开的分类页。
     # 豆瓣放第一是仓库所有者的要求（2026-10-29）；它 searchable=0，不影响点卡片后的同名搜索取哪个站。
     "sites": [{"key": "douban", "name": "豆瓣导航", "type": 3, "api": "csp_Douban",
-               "searchable": 0, "filterable": 1, "changeable": 1, "timeout": 30},
+               "searchable": 0, "quickSearch": 0, "filterable": 1, "changeable": 1,
+               # indexs=1 让宿主把这一站当"导航站"：点卡片先进搜索/聚合页，而不是直接播第一个同名结果。
+               # 手机版走 SearchActivity，电视版走 CollectActivity（都带 keyword）。不要删。
+               "indexs": 1, "timeout": 30},
               {"key": "ikanbot_fresh", "name": "爱看机器人", "type": 3,
                "api": "csp_Ikanbot", "searchable": 1, "quickSearch": 1,
                "filterable": 1, "changeable": 1, "timeout": 120,

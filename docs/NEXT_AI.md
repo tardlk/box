@@ -27,10 +27,10 @@
    （手机版 SearchActivity，电视版 CollectActivity）。删了就退化成自动播放。
 2. 豆瓣接口只认微信小程序 UA；换成普通浏览器 UA 会返回 400 / code 997。见 Douban.UA。
 3. 豆瓣封面是直连地址加 @Referer= 后缀（宿主 ImgUtil 会解析并去掉），不要改回走本项目的图片代理。
-4. 爱看机器人封面走站点自己的代理 imgp2.ikanbot.eu.org；非豆瓣域名才用本项目代理。
-   这个代理**要求 UA + Referer**：裸请求、只带 UA、只带 Referer 都是 403。
-   所以封面地址必须带 `@Referer=…@User-Agent=…` 后缀（宿主 ImgUtil 解析后剥掉），
-   删掉就静默变成"没有封面"——不报错，只是不给图。见 HANDOFF.md §13。
+4. 爱看机器人封面**直连豆瓣 CDN**，地址带 `@Referer=https://movie.douban.com/` 后缀；非豆瓣域名才用本项目代理。
+   豆瓣图床不带 Referer（或只带 UA）返回 418，带 Referer 才 200，所以这个后缀不能删。
+   **不要改回去走 `imgp2.ikanbot.eu.org`**：那是境外 Cloudflare Worker，实测单张 4–40 秒、约一半不响应，
+   正是"封面加载不出来"的原因（12 张直连豆瓣全部成功、每张约 0.1 秒）。见 HANDOFF.md §14。
 5. 爱看机器人的入口必须保持 v.ikanbot.com。它 301 到当时可用的镜像（www1 可用），
    而直连 www.ikanbot.com 的详情页会超时。不要"优化"成 www。
 6. 三个站点共用 JAR，已有站点 key（douban、ikanbot_fresh、ivdy）不能改、不能互相覆盖。
@@ -52,22 +52,22 @@ scripts/verify_release.py 里同步站点配置和必需入口类。
 
 ---
 
-## 交接时的事实快照（2026-10-29 16:20）
+## 交接时的事实快照（2026-10-29 16:50）
 
 | 项 | 值 |
 |---|---|
 | 分支 / 提交 | `main`，与 `origin/main` 同步 |
-| 线上 JAR | `box-91c19c170b12bd16fb74c018e6d4fc3c.jar`（182835 字节，封面请求头修复） |
+| 线上 JAR | `box-2f9c75b1530c8299f4123fac9e7668c1.jar`（182402 字节，封面改回豆瓣直连） |
 | 配置 | 站点顺序 `douban` → `ikanbot_fresh` → `ivdy`；豆瓣 `indexs:1`、`searchable:0` |
-| 契约检查 | **81 项**（爱看机器人 36 + 爱电影 17 + 豆瓣 28） |
-| 最近发布的快照 | `config-20261029-poster-headers.json` |
+| 契约检查 | **80 项**（爱看机器人 35 + 爱电影 17 + 豆瓣 28） |
+| 最近发布的快照 | `config-20261029-douban-covers.json` |
 
 ## 三个站点各自的关键约束
 
 | 站点 | 必须保持 |
 |---|---|
 | 豆瓣导航 `csp_Douban` | `indexs:1`；微信小程序 UA；封面直连 + `@Referer=`；`searchable:0`（否则点卡片会绕回自己） |
-| 爱看机器人 `csp_Ikanbot` | 入口 `v.ikanbot.com`；封面走 `imgp2` 且必须带 `@Referer=`/`@User-Agent=` 后缀（否则 403 无封面）；缓存首页/分类/搜索 180s、详情 120s；WebView 降级上限 25s |
+| 爱看机器人 `csp_Ikanbot` | 入口 `v.ikanbot.com`；封面直连豆瓣 CDN + `@Referer=https://movie.douban.com/`（否则 418 无封面），**不要走 `imgp2`**；缓存首页/分类/搜索 180s、详情 120s；WebView 降级上限 25s |
 | 爱电影 `csp_Ivdy` | 默认取最高画质；域名轮换由 `IvdyApi.discover()` 跟随，不写死 |
 
 ## 当前环境（换机器需重配）

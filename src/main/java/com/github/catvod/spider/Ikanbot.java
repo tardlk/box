@@ -15,15 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Fresh implementation for FongMi 5.x, built from the site's current HTML and public player contract. */
 public final class Ikanbot extends Spider {
-    private static final String POSTER_PROXY = "https://imgp2.ikanbot.eu.org";
     /**
-     * The site's poster proxy rejects a bare image request with 403: it wants a browser UA *and* a
-     * site Referer (measured 2026-10-29: UA only 403, Referer only 403, both 200 with a real JPEG).
-     * FongMi's ImgUtil pulls "@Referer=" / "@User-Agent=" out of the picture URL and strips them
-     * before loading, so the client still fetches the proxy directly. Douban.java uses the same
-     * trick with a single suffix; the client's own image loader sends no headers at all.
+     * Douban's image CDN answers 418 without a Referer and 200 with one, so the poster URL carries
+     * the Referer for the host's ImgUtil to lift out. Same convention as Douban.java.
      */
-    private static final String POSTER_HEADERS = "@Referer=" + SiteHttp.ROOT + "/@User-Agent=" + SiteHttp.UA;
+    private static final String DOUBAN_IMAGE_REFERER = "https://movie.douban.com/";
     private static final long TTL_HOME = 180_000L;
     private static final long TTL_LIST = 180_000L;
     private static final long TTL_DETAIL = 120_000L;
@@ -184,33 +180,24 @@ public final class Ikanbot extends Spider {
     }
 
     /**
-     * 豆瓣封面交给站点自己的封面代理，客户端直接向 CDN 取图。
-     * 之前每张图都要客户端 → 本插件代理 → 源站一个来回，一页 24 张就是 24 次多余往返。
+     * 豆瓣封面直连图片 CDN，只补宿主认识的 {@code @Referer=} 后缀。
+     *
+     * <p>豆瓣图床要 Referer：不带或只带 UA 都是 418，带上才是 200（2026-10-29 实测）。
+     * 站点自己的封面代理 {@code imgp2.ikanbot.eu.org} 是境外 Cloudflare Worker，
+     * 实测同一张图单次 4–40 秒且约一半请求完全不响应，而豆瓣直连 12/12 成功、每张约 0.1 秒，
+     * 因此不再绕它。宿主 {@code ImgUtil} 会把后缀变成请求头再剥掉，客户端仍然直连。
      */
     String poster(String original) {
         if (original == null || original.isEmpty()) return "";
-        String host = null;
-        try { host = java.net.URI.create(original).getHost(); } catch (Exception ignored) { }
-        if (host != null) {
-            host = host.toLowerCase(java.util.Locale.ROOT);
-            if (host.equals("doubanio.com") || host.endsWith(".doubanio.com")) {
-                String id = posterId(original);
-                if (!id.isEmpty()) {
-                    String encoded = java.util.Base64.getUrlEncoder().withoutPadding()
-                            .encodeToString(original.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                    return POSTER_PROXY + "/i/" + id + "?u=" + encoded + POSTER_HEADERS;
-                }
-            }
+        String fixed = SiteParser.poster(original);
+        String host;
+        try { host = java.net.URI.create(fixed).getHost(); }
+        catch (Exception ignored) { return image(fixed); }
+        if (host != null && (host.equalsIgnoreCase("doubanio.com")
+                || host.toLowerCase(java.util.Locale.ROOT).endsWith(".doubanio.com"))) {
+            return fixed + "@Referer=" + DOUBAN_IMAGE_REFERER;
         }
-        return image(original);
-    }
-
-    static String posterId(String url) {
-        java.util.regex.Matcher matcher = java.util.regex.Pattern
-                .compile("/p(\\d+)\\.(?:jpe?g|png|webp)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(url);
-        if (matcher.find()) return matcher.group(1);
-        matcher = java.util.regex.Pattern.compile("(\\d+)(?!.*\\d)").matcher(url);
-        return matcher.find() ? matcher.group(1) : "";
+        return image(fixed);
     }
 
     private String image(String original) {

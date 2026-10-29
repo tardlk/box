@@ -103,21 +103,19 @@ public final class ContractTest {
             try { client.get(base + "/blocked"); } catch (SiteHttp.Failure failure) { blocked = failure.verification; }
             check(blocked, "站点验证单独标识，不视为成功响应");
         } finally { server.stop(0); }
-        // 封面交给站点自己的代理：省掉客户端 → 本插件 → 源站这趟来回
+        // 豆瓣封面直连图床并补 Referer：图床不带 Referer 是 418，站点封面代理又慢又不稳
         Ikanbot ik = new Ikanbot();
         String doubanPoster = "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2186920269.jpg";
         String proxied = ik.poster(doubanPoster);
-        check(proxied.startsWith("https://imgp2.ikanbot.eu.org/i/2186920269?u="), "豆瓣封面改写为站点封面代理");
-        String encoded = proxied.substring(proxied.indexOf("?u=") + 3, proxied.indexOf('@') < 0 ? proxied.length() : proxied.indexOf('@'));
-        check(new String(java.util.Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8).equals(doubanPoster),
-                "站点代理参数是原封面的 base64url");
-        // A bare image request gets 403; the site's proxy wants a browser UA and a site Referer.
-        check(proxied.contains("@Referer=") && proxied.contains("@User-Agent="),
-                "封面附带站点代理要求的 Referer 与 UA 后缀");
+        check(proxied.equals(doubanPoster + "@Referer=https://movie.douban.com/"),
+                "豆瓣封面直连图床并附加宿主认识的 Referer 后缀");
+        check(!proxied.contains("imgp2") && !proxied.contains("/i/"),
+                "豆瓣封面不再绕站点封面代理");
+        String legacy = ik.poster("https://img1.doubanio.com/view/movie_poster_cover/lpst/public/p2186920269.jpg");
+        check(legacy.equals("https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2186920269.jpg"
+                + "@Referer=https://movie.douban.com/"), "旧版海报路径先修正再补 Referer");
         check(!ik.poster("https://images.example.com/a.jpg").contains("imgp2"), "非豆瓣封面仍走原有代理逻辑");
-        check(Ikanbot.posterId("https://img1.doubanio.com/view/movie_poster_cover/lpst/public/p2186920269.jpg").equals("2186920269"),
-                "从旧版海报路径取到图片 ID");
-        check(Ikanbot.posterId("https://images.example.com/a.jpg").isEmpty(), "没有数字时不给封面 ID");
+        check(!ik.poster("https://images.example.com/a.jpg").contains("@Referer="), "非豆瓣封面不附加豆瓣 Referer");
 
         System.out.println("CONTRACT PASS " + count);
     }

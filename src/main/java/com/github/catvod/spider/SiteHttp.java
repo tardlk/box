@@ -14,9 +14,11 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 final class SiteHttp {
-    // v.ikanbot.com 是稳定跳板：它 301 到当次可用的镜像（实测 www1 可用，www 反而会超时）。
-    // 跟随一次跳转后 origin 会更新成实际落地域名，后续请求不再吃 301。
-    static final String ROOT = "https://v.ikanbot.com";
+    // 入口直连 www，不再经 v 跳板：v 会 301 到 www1，而 www1 在不同网络下快慢差别很大
+    // （仓库所有者实测 www1 在 Edge 里极慢，www 正常；本机则相反）。www 自己 200，列表与详情都直出，
+    // 详情页的 current_id / e_token / mtype / get_tks 齐全。
+    // 仍然跟随一次跳转：万一 www 哪天也开始 301，落地域名会被记进 origin，后续不再吃跳转。
+    static final String ROOT = "https://www.ikanbot.com";
     static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
     private final CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER);
     private volatile String origin = ROOT;

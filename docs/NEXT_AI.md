@@ -28,7 +28,7 @@
 最容易踩的几条（完整清单和原因见 HANDOFF.md 第 3 节）：
 - 豆瓣 indexs:1 / searchable:0 / 微信小程序 UA / 封面 @Referer= 后缀，都不能动。
 - 爱看机器人封面直连豆瓣 CDN + @Referer=https://movie.douban.com/；不要改回走 imgp2 代理。
-- 爱看机器人入口保持 v.ikanbot.com，不要"优化"成 www。
+- 爱看机器人入口用 www.ikanbot.com，不要改回 v（v 会跳到 www1，部分网络里极慢）。
 - 爱电影默认最高画质是所有者决定，不要按接口标注降回 720。
 - 发布流程固定；只改配置时不要重新打包 JAR；核对源码一致性要比 classes.dex，不比外层 JAR MD5。
 

@@ -40,7 +40,7 @@ rg -n 'getProxyUrl|getActivity|searchContent|playerContent|destroy' catvod/src/m
 
 ## 3. ikanbot：必须对照当前站点
 
-稳定入口：[v.ikanbot.com](https://v.ikanbot.com/)。观察时跳至 `www1.ikanbot.com`，实现会记录真实落地域名。
+入口：[www.ikanbot.com](https://www.ikanbot.com/)。`v.ikanbot.com` 会 301 到 `www1`，但 `www1` 在部分网络下极慢，现已不走它（HISTORY 第 7 节）。实现仍会记录真实落地域名。
 
 | 要查的行为 | 从哪里定位 |
 |---|---|

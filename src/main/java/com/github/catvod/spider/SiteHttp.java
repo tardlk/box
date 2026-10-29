@@ -56,10 +56,15 @@ final class SiteHttp {
     }
 
     static HttpURLConnection open(String url, String referer) throws IOException {
+        return open(url, referer, UA);
+    }
+
+    /** Some public clients (Douban's mini program) only answer their own User-Agent. */
+    static HttpURLConnection open(String url, String referer, String userAgent) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(8000);
         connection.setReadTimeout(15000);
-        connection.setRequestProperty("User-Agent", UA);
+        connection.setRequestProperty("User-Agent", userAgent);
         connection.setRequestProperty("Referer", referer);
         connection.setRequestProperty("Accept-Encoding", "gzip");
         return connection;

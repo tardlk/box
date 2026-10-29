@@ -25,6 +25,7 @@ types = [strings[struct.unpack_from("<I", dex, types_offset + index * 4)[0]] for
 classes = {types[struct.unpack_from("<I", dex, classes_offset + index * 32)[0]] for index in range(classes_count)}
 assert "Lcom/github/catvod/spider/Ikanbot;" in classes
 assert "Lcom/github/catvod/spider/Ivdy;" in classes
+assert "Lcom/github/catvod/spider/Douban;" in classes
 assert "Lcom/github/catvod/spider/Proxy;" in classes
 assert "Lcom/github/catvod/crawler/Spider;" not in classes
 assert not any(value.startswith("Lorg/json/") for value in classes)
@@ -45,16 +46,20 @@ config = {
                "filterable": 1, "changeable": 1, "timeout": 120,
                "ext": {"webview": True}},
               {"key": "ivdy", "name": "爱电影", "type": 3, "api": "csp_Ivdy", "searchable": 1,
-               "quickSearch": 1, "filterable": 1, "changeable": 1, "timeout": 60}],
+               "quickSearch": 1, "filterable": 1, "changeable": 1, "timeout": 60},
+              # 豆瓣只做导航：searchable=0，否则搜索出的 msearch 卡片会把用户送回搜索。
+              {"key": "douban", "name": "豆瓣导航", "type": 3, "api": "csp_Douban",
+               "searchable": 0, "filterable": 1, "changeable": 1, "timeout": 30}],
     "parses": []
 }
 (root / "dist/config.json").write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n")
 report = {"jar_bytes": target.stat().st_size, "md5": digest, "dex_version": dex[4:7].decode(),
           "class_count": len(classes), "entry_class": "com.github.catvod.spider.Ikanbot",
-          "compile_stub_excluded": True, "jsoup_included": True, "additional_entries": ["com.github.catvod.spider.Ivdy"]}
+          "compile_stub_excluded": True, "jsoup_included": True,
+          "additional_entries": ["com.github.catvod.spider.Ivdy", "com.github.catvod.spider.Douban"]}
 (root / "dist/build-report.json").write_text(json.dumps(report, indent=2) + "\n")
 with zipfile.ZipFile(root / "dist/ikanbot-fongmi5.zip", "w", zipfile.ZIP_DEFLATED) as bundle:
-    for name in ["ikanbot.jar", "ikanbot.jar.md5", "config.json", "build-report.json", "verification.json", "media-check.json", "poster-check.json", "ivdy-verification.json"]:
+    for name in ["ikanbot.jar", "ikanbot.jar.md5", "config.json", "build-report.json", "verification.json", "media-check.json", "poster-check.json", "ivdy-verification.json", "douban-verification.json"]:
         path = root / "dist" / name
         if path.exists():
             bundle.write(path, name)

@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-29T02:09:49.376432Z",
+  "rank_top250_page2": 20,
+  "search_enabled": false,
+  "filter_movie": 20,
+  "rank_top250": 20,
+  "sample": {
+    "name": "后会友期",
+    "remarks": "2026"
+  },
+  "hot_movie": 20,
+  "home": 20,
+  "filter_show": 20,
+  "filter_movie_scifi_2026": 20,
+  "detail_is_navigation_only": true,
+  "rank": 10,
+  "poster": {
+    "bytes": 20432,
+    "mime": "image/jpeg",
+    "width": 270,
+    "status": 200,
+    "height": 405
+  },
+  "hot_tv": 20,
+  "filter_tv": 20,
+  "hot_show": 20
+}

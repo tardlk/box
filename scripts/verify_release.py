@@ -17,7 +17,7 @@ def inspect(config, jar, checksum):
         raise ValueError('Downloaded JAR has a different MD5')
     apis = [site['api'] for site in config['sites']]
     keys = [site['key'] for site in config['sites']]
-    if not {'csp_Ikanbot', 'csp_Ivdy'}.issubset(apis) or len(keys) != len(set(keys)):
+    if not {'csp_Ikanbot', 'csp_Ivdy', 'csp_Douban'}.issubset(apis) or len(keys) != len(set(keys)):
         raise ValueError('Existing sites missing or site keys duplicated')
     with zipfile.ZipFile(io.BytesIO(jar)) as archive:
         dex = archive.read('classes.dex')

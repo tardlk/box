@@ -10,6 +10,7 @@ CP="lib/json-test.jar:lib/jsoup.jar:$TASK_SDK/platforms/android-30/android.jar:b
 "$TASK_JAVA/bin/javac" -encoding UTF-8 -cp "$CP" -d build/tests test/*.java
 "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.ContractTest
 "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.IvdyContractTest
+"$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.DoubanContractTest
 if [[ "${1:-}" == "--live" ]]; then
     "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.LiveTest
 fi
@@ -18,4 +19,7 @@ if [[ "${1:-}" == "--posters" ]]; then
 fi
 if [[ "${1:-}" == "--ivdy" ]]; then
     "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.IvdyLiveTest
+fi
+if [[ "${1:-}" == "--douban" ]]; then
+    "$TASK_JAVA/bin/java" -cp "build/tests:$CP" com.github.catvod.spider.DoubanLiveTest
 fi

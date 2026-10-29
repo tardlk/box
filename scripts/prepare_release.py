@@ -54,7 +54,7 @@ def main():
             raise SystemExit('Refusing to overwrite an existing snapshot with a different release')
         target.write_text(content)
         files.append(name)
-    for name in ['build-report.json', 'verification.json', 'media-check.json', 'poster-check.json', 'ivdy-verification.json']:
+    for name in ['build-report.json', 'verification.json', 'media-check.json', 'poster-check.json', 'ivdy-verification.json', 'douban-verification.json']:
         if (dist / name).is_file():
             shutil.copyfile(dist / name, output / name)
             files.append(name)

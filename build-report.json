@@ -1,12 +1,13 @@
 {
-  "jar_bytes": 176628,
-  "md5": "752e5b34485ae70709935cc68c738f0a",
+  "jar_bytes": 181479,
+  "md5": "50812b34404760998b435d60361aea54",
   "dex_version": "037",
-  "class_count": 338,
+  "class_count": 339,
   "entry_class": "com.github.catvod.spider.Ikanbot",
   "compile_stub_excluded": true,
   "jsoup_included": true,
   "additional_entries": [
-    "com.github.catvod.spider.Ivdy"
+    "com.github.catvod.spider.Ivdy",
+    "com.github.catvod.spider.Douban"
   ]
 }

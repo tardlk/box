@@ -15,9 +15,9 @@
 https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json
 ```
 
-两个站点共用一个 JAR，历史命名仍叫 `ikanbot.jar`，不表示只含 ikanbot。
-当前线上 JAR：`jar/box-752e5b34485ae70709935cc68c738f0a.jar`（2026-10-29 起，爱电影默认最高画质）。
-源码基线与该 JAR 为同一次提交；上一版为 `jar/box-7b075ad627b2d5cbbfc29f253d3b3b1c.jar`。
+三个站点共用一个 JAR，历史命名仍叫 `ikanbot.jar`，不表示只含 ikanbot。
+当前线上 JAR：`jar/box-50812b34404760998b435d60361aea54.jar`（2026-10-29 起，含豆瓣导航）。
+源码基线与该 JAR 为同一次提交；上一版为 `jar/box-752e5b34485ae70709935cc68c738f0a.jar`。
 
 ## 2. 已完成与未完成
 
@@ -27,7 +27,8 @@ https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.js
 | 老友记第一季海报 | 旧豆瓣地址 403；改路径后 10 季海报代理均返回可解码图片 | 封面非空字符串不代表图片可用 |
 | 爱电影 `csp_Ivdy` | 分类、筛选、分页、搜索、详情、封面、选集和取址接口通过实网检查；2026-10-29 用户确认设备上可播放 | 声音、拖动与弱性能盒子的解码表现未单独确认；播放可用不等于各画质都稳定 |
 | 爱电影画质 | 2026-10-29 起默认取最高分辨率，复测电影样例实际选中 1080p 并取到有效分片；同画质优先 `flag=true` | 接口对 720/1080 仍标 `needLogin=true`。放开高分档是仓库所有者的决定（2026-10-29 明确要求），不是技术判断；不要反过来又按标注降级 |
-| 本地测试 | 原有 30 项 + 爱电影 17 项，共 47 项通过（2026-10-29） | 历史记录不能当成本轮新测试；没有连接 Android 真机 |
+| 豆瓣导航 `csp_Douban` | 七个分类、首页推荐、筛选、Top250 翻页、封面代理通过实网检查（2026-10-29） | 它是导航站：`vod_id` 用 `msearch:` 前缀，靠片名交给影视站搜索，本身无详情与播放。`searchable` 必须是 0，否则点卡片会绕回搜索 |
+| 本地测试 | 爱看机器人 30 + 爱电影 17 + 豆瓣 26，共 73 项通过（2026-10-29） | 历史记录不能当成本轮新测试；没有连接 Android 真机 |
 
 如果爱电影播放再次失败，先在当前网络对照原站，再比较接口与媒体请求；保留失败正文。
 已确认 `403 the source ip is forbidden` 是 CDN 按来源 IP 放行造成的，换 Referer、换新鲜令牌都不会改变结果，
@@ -44,10 +45,11 @@ https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.js
 | 同目录 `BrowserPage.java` | Android 可见 WebView、页面公开 DOM 读取、取消和销毁 |
 | 同目录 `Ivdy.java` | 新站点入口；用选集 ID 延迟取址，适合学习新增 API 型站点 |
 | 同目录 `IvdyApi.java` / `IvdyParser.java` | 域名发现、公开客户端签名、接口转播放器 JSON |
+| 同目录 `Douban.java` | 导航型站点：分类与筛选项、`msearch:` 卡片、封面代理；无详情与播放 |
 | `src/stubs/.../Spider.java` | 本地最小编译接口；实际能力以 FongMi 宿主源码为准 |
 | `build.sh` / `scripts/package.py` | 编译、D8、依赖合并、DEX 检查、JAR 和配置生成 |
 | `test/` / `test.sh` | 契约测试与按需执行的实网测试 |
-| `IVDY.md` / `DEVELOPMENT.md` | 两个站点的具体实现与历史验证说明 |
+| `IVDY.md` / `DOUBAN.md` / `DEVELOPMENT.md` | 各站点的具体实现与历史验证说明 |
 
 本机原工作目录为 `ikanbot-spider/`，曾通过 GitHub 连接器直接提交，没有 `.git`。
 换机器接手应直接 `git clone https://github.com/tardlk/box.git`，不依赖原机或旧聊天。
@@ -76,9 +78,10 @@ SDK 需要 `platforms/android-30/android.jar` 和 `build-tools/35.0.0/d8`；还�
 
 1. 在真实页面确认稳定入口、最终跳转域名、分类、搜索分页、详情选集、播放请求和封面请求。
 2. 判断数据在 HTML、公开 JSON API 还是网页运行后 DOM。优先参考当前站点和宿主源码。
-3. 对照 `Ivdy.java` 或 `Ikanbot.java` 写新的公开 Spider 子类，把解析逻辑和网络逻辑分开。
+3. 对照 `Ivdy.java`、`Ikanbot.java` 或 `Douban.java` 写新的公开 Spider 子类，把解析逻辑和网络逻辑分开。
+   导航型站点参考 `Douban.java`：`vod_id` 用 `msearch:` 前缀，`searchable` 设为 0。
 4. `csp_Xxx` 对应 `com.github.catvod.spider.Xxx`，保留无参构造；按 [SPI 格式](docs/JAR_GUIDE.md) 返回 JSON。
-5. 在 `scripts/package.py` 增加站点配置及入口类存在检查；不要覆盖已有两站。
+5. 在 `scripts/package.py` 增加站点配置及入口类存在检查，并同步 `scripts/verify_release.py` 的必需 `csp_` 集合；不要覆盖已有三站。
 6. 用真实响应的最小样本做解析/签名/分页回归；实网验证图片实际字节和媒体清单，记录失败。
 7. 生成新版本发布目录，连同源码、文档和记录一次提交；校验加速配置实际下载到新 JAR。
 
@@ -87,16 +90,18 @@ SDK 需要 `platforms/android-30/android.jar` 和 `build-tools/35.0.0/d8`；还�
 ## 6. 按需验证与接手优先级
 
 ```bash
-bash test.sh             # 47 项本地检查；先构建
+bash test.sh             # 73 项本地检查；先构建
 bash test.sh --posters   # ikanbot 老友记 10 季图片代理，检查真实图片
 bash test.sh --live      # ikanbot 首页/分类/搜索/详情/HLS
 bash test.sh --ivdy      # 爱电影完整接口；没有可访问 HLS 时退出码 2
+bash test.sh --douban    # 豆瓣七个分类/筛选/榜单翻页/封面代理
 ```
 
 每个实网开关只执行对应检查，不是把所有站点都跑一遍。
 测试写到 `dist/` 的记录是新结果；仓库根同名记录是历史发布证据，不要悄悄刷新日期。
 
-后续优先级：ikanbot 原生 WebView 与遥控器交互确认（爱电影播放已由用户确认可用）。
+后续优先级：真机上确认豆瓣卡片的点击与跨站搜索 → ikanbot 原生 WebView 与遥控器交互确认
+（爱电影播放已由用户确认可用）。
 若网站更新，先复现具体入口，不要因一个站点故障重写另一个已可用站点。
 
 ## 7. 去哪里查资料
@@ -135,3 +140,27 @@ bash test.sh --ivdy      # 爱电影完整接口；没有可访问 HLS 时退出
 - 实网复测：电影样例可选 1080/720/480，实际选中 **1080p**，清单 163689 字符；三档首分片均为有效 TS（1080 为 2541948 字节）。老友记样例当轮只提供 720，按规则取 720。
 - 已按发布流程用 `prepare_release.py` 暂存、`verify_release.py` 校验同一次提交内的新 JAR、根 `config.json`、快照配置，并回读线上配置比对 MD5。
 - **已由用户确认设备上可播放**（2026-10-29，反馈「目前可以播放了」）。仍未单独确认的是声音、拖动和弱性能盒子上的 1080 解码表现；若反馈卡顿，回退方式是把配置指回上一版固定 JAR。
+
+## 10. 2026-10-29：新增豆瓣导航（本次发布）
+
+用户要求在参考实现 `lushunming/AndroidCatVodSpider` 的 `Douban.java` 基础上加豆瓣导航。实现见 `Douban.java`，说明见 [DOUBAN.md](DOUBAN.md)。
+
+接手时要先知道的四件事：
+
+1. **`msearch:` 是宿主约定，不是本项目发明**。`VodPlaybackController.checkId` 遇到 `msearch:` 前缀直接 `detailEmpty(false)`，
+   不请求详情，改用片名做全站搜索。所以卡片 id 冒号后面跟什么不影响结果，**片名必须准确**。
+2. **`searchable` 必须是 0**。否则搜索结果还是 `msearch:` 卡片，点进去又触发搜索，绕回自己。
+   参考实现同样设为 0（`json/index.json` 的「豆瓣仅推荐」）。
+3. **接口只认微信小程序 UA**。同一 `apikey` 配 Chrome UA 稳定返回 HTTP 400 / `code 997`；交替实测确认过。
+   不能把 `Douban.UA` 换成通用的 `SiteHttp.UA`，因此 `SiteHttp.open` 增加了带 UA 的重载。
+4. **封面要像浏览器加载图片**。缺 `Accept: image/*` 时 `img*.doubanio.com` 返回 418 `cdn error 001`。
+   已在 `Proxy.proxy` 统一补 `Accept`，ikanbot 的海报同时受益；豆瓣图片本身不校验 Referer，代理失败还能退回原地址。
+
+顺带做的重构：`Proxy.url(spider, tag, original)` 抽出，`Ikanbot.image` 改为调用它，行为不变。
+回归跑了 `--live`、`--posters`（10/10）、`--ivdy`（HLS 通过），确认没有影响两个已有站点。
+
+分类设计上把剧集筛选与综艺筛选拆成两个分类：豆瓣的 `tags` 之间是「与」关系，
+电视剧形式与综艺形式放在同一组会互相冲突，选两个就查不到东西。
+
+验证：73 项契约检查（30 + 17 + 26）全过；`--douban` 七个分类各 20 条、榜单 10 条、Top250 第二页、封面 270x405 走代理成功。
+仍未确认：真机上的卡片点击、跨站搜索结果聚合与遥控器操作。

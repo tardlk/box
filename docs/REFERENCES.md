@@ -92,7 +92,31 @@ rg -n 'getProxyUrl|getActivity|searchContent|playerContent|destroy' catvod/src/m
 签名常量也可能更新，应对照当前公开客户端，不依赖聊天里的一次抓取或 `/tmp/` 缓存。
 本项目没有保存账号 Cookie、登录令牌或长期有效的媒体签名。
 
-## 5. 工具和依赖的官方文档
+## 5. 豆瓣导航：微信小程序公开接口
+
+参考实现：[lushunming/AndroidCatVodSpider `Douban.java`](https://github.com/lushunming/AndroidCatVodSpider/blob/multiThread/app/src/main/java/com/github/catvod/spider/Douban.java)
+与其筛选项 `json/douban.json`；本项目只借鉴接口流程与筛选项取值，解析与分页逻辑独立实现。
+
+| 要查的行为 | 从哪里定位 |
+|---|---|
+| 接口根与版本 | `https://frodo.douban.com/api/v2`，公共参数 `apikey=0ac44ae016490db2204ce0a042db2916` |
+| 集合（热播、榜单） | `/subject_collection/<集合名>/items`，响应键 `subject_collection_items` |
+| 推荐列表 | `/movie/recommend`、`/tv/recommend`，响应键 `items`；`sort=T/S/R`，`tags` 逗号分隔 |
+| 热门电影 | `/movie/hot_gaia`，`sort=recommend/time/rank`、`area` |
+| 卡片字段 | `id`（纯数字才是影片）、`title`、`pic.normal`、`cover_url`、`rating.value`、`card_subtitle`、`year` |
+| 导航跳转 | `vod_id` 用 `msearch:` 前缀，宿主见 `VodPlaybackController.checkId` |
+
+2026-10-29 实测的两个硬性条件，重新定位时先复现这两条：
+
+1. **User-Agent 必须是小程序 UA**（`MicroMessenger/... MiniProgramEnv/...`）。
+   换成 Chrome UA 会得到 HTTP 400、正文 `{"code":997,"msg":"invalid_request_997"}`；交替发送可稳定复现。
+2. **封面请求要带 `Accept: image/...`**。缺失时 `img*.doubanio.com` 返回 418、正文 `cdn error 001`；
+   带头后 200 且 `cache-control: max-age=31536000`。豆瓣图片不校验 Referer。
+
+`code 997` 也可能是短时间请求过多触发的限流（曾在一分钟内连发十余次后出现，静默数十秒恢复）。
+本项目把它翻成可读提示，不做本地缓存；判断是真限流还是 UA 不对，用交替发送对照。
+
+## 6. 工具和依赖的官方文档
 
 - [Android D8](https://developer.android.com/tools/d8)：class/JAR 转 DEX，查 `--lib`、`--classpath`、`--min-api`、`--release`、`--output`。
 - [Android SDK Manager / 当前 CLI 说明](https://developer.android.com/tools/sdkmanager)：安装编译平台与 Build Tools；按当前工具版本操作。

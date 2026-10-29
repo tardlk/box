@@ -108,9 +108,12 @@ public final class ContractTest {
         String doubanPoster = "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p2186920269.jpg";
         String proxied = ik.poster(doubanPoster);
         check(proxied.startsWith("https://imgp2.ikanbot.eu.org/i/2186920269?u="), "豆瓣封面改写为站点封面代理");
-        String encoded = proxied.substring(proxied.indexOf("?u=") + 3);
+        String encoded = proxied.substring(proxied.indexOf("?u=") + 3, proxied.indexOf('@') < 0 ? proxied.length() : proxied.indexOf('@'));
         check(new String(java.util.Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8).equals(doubanPoster),
                 "站点代理参数是原封面的 base64url");
+        // A bare image request gets 403; the site's proxy wants a browser UA and a site Referer.
+        check(proxied.contains("@Referer=") && proxied.contains("@User-Agent="),
+                "封面附带站点代理要求的 Referer 与 UA 后缀");
         check(!ik.poster("https://images.example.com/a.jpg").contains("imgp2"), "非豆瓣封面仍走原有代理逻辑");
         check(Ikanbot.posterId("https://img1.doubanio.com/view/movie_poster_cover/lpst/public/p2186920269.jpg").equals("2186920269"),
                 "从旧版海报路径取到图片 ID");

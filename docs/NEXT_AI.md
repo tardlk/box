@@ -28,6 +28,9 @@
 2. 豆瓣接口只认微信小程序 UA；换成普通浏览器 UA 会返回 400 / code 997。见 Douban.UA。
 3. 豆瓣封面是直连地址加 @Referer= 后缀（宿主 ImgUtil 会解析并去掉），不要改回走本项目的图片代理。
 4. 爱看机器人封面走站点自己的代理 imgp2.ikanbot.eu.org；非豆瓣域名才用本项目代理。
+   这个代理**要求 UA + Referer**：裸请求、只带 UA、只带 Referer 都是 403。
+   所以封面地址必须带 `@Referer=…@User-Agent=…` 后缀（宿主 ImgUtil 解析后剥掉），
+   删掉就静默变成"没有封面"——不报错，只是不给图。见 HANDOFF.md §13。
 5. 爱看机器人的入口必须保持 v.ikanbot.com。它 301 到当时可用的镜像（www1 可用），
    而直连 www.ikanbot.com 的详情页会超时。不要"优化"成 www。
 6. 三个站点共用 JAR，已有站点 key（douban、ikanbot_fresh、ivdy）不能改、不能互相覆盖。
@@ -49,23 +52,22 @@ scripts/verify_release.py 里同步站点配置和必需入口类。
 
 ---
 
-## 交接时的事实快照（2026-10-29 15:29 复核）
+## 交接时的事实快照（2026-10-29 16:20）
 
 | 项 | 值 |
 |---|---|
-| 分支 / 提交 | `main` = `55f0925`（与 `origin/main` 同步） |
-| 线上 JAR | `box-934ad6bce4626704024e66dd59d1b111.jar`（182631 字节） |
-| 源码一致性 | 从 `main` 重新构建的 `classes.dex` SHA-256 与线上 JAR 完全相同（`8d1a4955…`） |
+| 分支 / 提交 | `main`，与 `origin/main` 同步 |
+| 线上 JAR | `box-91c19c170b12bd16fb74c018e6d4fc3c.jar`（182835 字节，封面请求头修复） |
 | 配置 | 站点顺序 `douban` → `ikanbot_fresh` → `ivdy`；豆瓣 `indexs:1`、`searchable:0` |
-| 契约检查 | 80 项（爱看机器人 35 + 爱电影 17 + 豆瓣 28） |
-| 最近发布的快照 | `config-20261029-ikanbot-speed.json` |
+| 契约检查 | **81 项**（爱看机器人 36 + 爱电影 17 + 豆瓣 28） |
+| 最近发布的快照 | `config-20261029-poster-headers.json` |
 
 ## 三个站点各自的关键约束
 
 | 站点 | 必须保持 |
 |---|---|
 | 豆瓣导航 `csp_Douban` | `indexs:1`；微信小程序 UA；封面直连 + `@Referer=`；`searchable:0`（否则点卡片会绕回自己） |
-| 爱看机器人 `csp_Ikanbot` | 入口 `v.ikanbot.com`；封面走 `imgp2`；缓存首页/分类/搜索 180s、详情 120s；WebView 降级上限 25s |
+| 爱看机器人 `csp_Ikanbot` | 入口 `v.ikanbot.com`；封面走 `imgp2` 且必须带 `@Referer=`/`@User-Agent=` 后缀（否则 403 无封面）；缓存首页/分类/搜索 180s、详情 120s；WebView 降级上限 25s |
 | 爱电影 `csp_Ivdy` | 默认取最高画质；域名轮换由 `IvdyApi.discover()` 跟随，不写死 |
 
 ## 当前环境（换机器需重配）
@@ -88,5 +90,7 @@ scripts/verify_release.py 里同步站点配置和必需入口类。
    细节和三个可选方案见 HANDOFF.md 第 12 节；改这个要重打包 JAR，先让所有者选。
 4. 电视版（leanback）点豆瓣卡片进的是 `CollectActivity`，实际体验未在真机确认。
 5. 弱性能盒子播放 1080p 的稳定性、声音与拖动未确认。
-6. 2026-10-29 15:29 那次 `--posters` 未拿到 10/10（最好 4/10 就被读超时打断），
-   判断是本机网络链路在抖而非代码退化（14:31 的记录是 10/10）。换网络后补测，不要改写历史记录的日期。
+6. 2026-10-29 16:20 那次 `--posters` 是 0/10（三次），全部卡在搜索步骤的 `Read timed out`，
+   属本机链路抖动而非代码退化（同日 14:31 的记录是 10/10）。
+   注意仓库根 `poster-check.json` 的 URL 是**加请求头后缀之前**的格式，不代表当前实现。
+   换网络后重跑 `--posters` 刷新，不要改写历史记录的日期。

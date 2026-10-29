@@ -16,6 +16,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Fresh implementation for FongMi 5.x, built from the site's current HTML and public player contract. */
 public final class Ikanbot extends Spider {
     private static final String POSTER_PROXY = "https://imgp2.ikanbot.eu.org";
+    /**
+     * The site's poster proxy rejects a bare image request with 403: it wants a browser UA *and* a
+     * site Referer (measured 2026-10-29: UA only 403, Referer only 403, both 200 with a real JPEG).
+     * FongMi's ImgUtil pulls "@Referer=" / "@User-Agent=" out of the picture URL and strips them
+     * before loading, so the client still fetches the proxy directly. Douban.java uses the same
+     * trick with a single suffix; the client's own image loader sends no headers at all.
+     */
+    private static final String POSTER_HEADERS = "@Referer=" + SiteHttp.ROOT + "/@User-Agent=" + SiteHttp.UA;
     private static final long TTL_HOME = 180_000L;
     private static final long TTL_LIST = 180_000L;
     private static final long TTL_DETAIL = 120_000L;
@@ -190,7 +198,7 @@ public final class Ikanbot extends Spider {
                 if (!id.isEmpty()) {
                     String encoded = java.util.Base64.getUrlEncoder().withoutPadding()
                             .encodeToString(original.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                    return POSTER_PROXY + "/i/" + id + "?u=" + encoded;
+                    return POSTER_PROXY + "/i/" + id + "?u=" + encoded + POSTER_HEADERS;
                 }
             }
         }

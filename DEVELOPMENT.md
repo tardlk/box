@@ -68,6 +68,10 @@ https://github.com/lushunming/AndroidCatVodSpider/blob/multiThread/app/src/main/
 封面改写规则与 JS 一致：`https://imgp2.ikanbot.eu.org/i/<图片ID>?u=<原地址的 base64url>`，
 其中 `i` 只是缓存名，服务端只认 `u`（实测传任意数字都返回同一张图）。非豆瓣域名仍走本插件代理。
 
+**该代理要求 UA + Referer**：裸请求固定 403，只带其中一个也是 403，两个都带才返回图片。
+所以地址后面追加 `@Referer=…@User-Agent=…`，由宿主 `ImgUtil` 解析成请求头并剥掉后缀，
+客户端依旧直连 CDN。删掉这两个后缀，封面会静默变成全空，见 HANDOFF.md §13。
+
 实测：详情首次 9.3 秒（上游慢），**命中缓存 0 毫秒**（此前每次都要重发 HTML + 接口两个请求）。
 
 关于入口域名，试过直连 `www.ikanbot.com` 想省掉一次 301，**结果是错的**：

@@ -50,6 +50,7 @@ rg -n 'getProxyUrl|getActivity|searchContent|playerContent|destroy' catvod/src/m
 | 线路接口 | 浏览器正常加载详情时的 `/api/getResN`，响应 `data.list[*].resData` |
 | 网页后备 | 页面渲染后的 `#lineContent`、`[name=lineData][udata]` |
 | 封面故障 | 对实际 data-src 发请求，检查状态与图片，不能只观察标签存在 |
+| 封面代理 403 | `imgp2.ikanbot.eu.org` 要求 **UA + Referer 同时存在**：裸请求、只带 UA、只带 Referer 都是 403。对照实验用同一 URL 只改请求头，见 HANDOFF.md §13 |
 
 相关回归测试：`ContractTest`、`PosterTest`、`LiveTest`。
 历史第一季海报 ID 是 `p2186920269`；故障为豆瓣旧 `/view/movie_poster_cover/lpst/public/` 路径返回 403。

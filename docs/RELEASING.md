@@ -9,7 +9,7 @@
 |---|---|
 | 根目录 `config.json` / `ikanbot.jar` / `ikanbot.jar.md5` | GitHub 当前在线版本，配置里的 JAR 是 gh-proxy 加速绝对地址 |
 | `jar/box-<md5>.jar` | 已发布的固定内容文件；旧配置可继续引用，禁止覆盖不同字节 |
-| 根目录 `config-日期-主题.json` | 发布快照，避开配置加速缓存；历史快照按日期原样保留（有人存过旧链接），**不要删、不要覆盖** |
+| 根目录 `config-日期-主题.json` | 发布快照，避开配置加速缓存；**只保留当前与上一版**（更早的在 2026-10-29 整理时清掉，旧链接已失效），发布时不要覆盖同名快照 |
 | `dist/` | 本机构建输出；其中 config 使用相对 JAR 地址，不能直接替换线上配置 |
 | `build/release/` | `prepare_release.py` 生成的发布暂存目录，不自动上传 |
 | 根目录各 `*-check.json` / `*-verification.json` | 随发布保留的验证证据；注明采样日期和失败，不等于本轮已重新实测 |
@@ -107,6 +107,7 @@ python3 scripts/verify_release.py \
 优先还原旧版本 `config.json`、`ikanbot.jar`、md5 与对应 build-report，或者把配置重新指向历史固定 JAR。
 保持 JSON 引用、JAR 实际字节与 MD5 一致。通过新的回滚提交完成，不改写历史文件或强推重置。
 
-要回滚时，从 [HANDOFF.md](../HANDOFF.md) 第 1 节取上一版 JAR 名（那里按发布时间列了最近几版），
-或者按 `config-日期-主题.json` 找当时的快照，它们引用的 JAR 都还在 `jar/` 里。
+要回滚时，把配置指向上一个快照（`config.json` 与上一版快照、上一个 JAR 都保留在仓库里）。
+再往前只能从 Git 历史里取——2026-10-29 整理时删掉了 10-28 与同日中间版本的快照和 6 个旧 JAR，
+`git log --diff-filter=D --name-only` 能查回文件，`git show <commit>:<path>` 能取回内容。
 不要在这里写死版本号——它会随每次发布过期。

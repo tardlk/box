@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/jar/box-4c420eb0759d0f1703f5d3d34bc1ffdd.jar;md5;4c420eb0759d0f1703f5d3d34bc1ffdd",
+  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/jar/box-934ad6bce4626704024e66dd59d1b111.jar;md5;934ad6bce4626704024e66dd59d1b111",
   "sites": [
     {
       "key": "douban",
@@ -7,11 +7,11 @@
       "type": 3,
       "api": "csp_Douban",
       "searchable": 0,
+      "quickSearch": 0,
       "filterable": 1,
       "changeable": 1,
-      "timeout": 30,
       "indexs": 1,
-      "quickSearch": 0
+      "timeout": 30
     },
     {
       "key": "ikanbot_fresh",

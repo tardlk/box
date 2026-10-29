@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 final class SiteHttp {
+    // v.ikanbot.com 是稳定跳板：它 301 到当次可用的镜像（实测 www1 可用，www 反而会超时）。
+    // 跟随一次跳转后 origin 会更新成实际落地域名，后续请求不再吃 301。
     static final String ROOT = "https://v.ikanbot.com";
     static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
     private final CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER);

@@ -41,7 +41,8 @@ final class BrowserPage {
         if (!active.compareAndSet(null, session)) throw new Exception("另一个网页正在读取，请关闭后重试");
         main.post(() -> show(session, context, spider, url));
         try {
-            if (!session.ready.await(90, TimeUnit.SECONDS)) finish(session, null, "网页读取超时；站点验证可能尚未完成");
+            // 曾经等 90 秒，直连失败时用户要干等一分半；验证码通常几秒内就有结果，给 25 秒足够。
+        if (!session.ready.await(25, TimeUnit.SECONDS)) finish(session, null, "网页读取超时；站点验证可能尚未完成");
             if (session.result == null) throw new Exception(session.error == null ? "网页读取失败" : session.error);
             return session.result;
         } catch (InterruptedException cancelled) {

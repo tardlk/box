@@ -1,0 +1,43 @@
+{
+  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/jar/box-934ad6bce4626704024e66dd59d1b111.jar;md5;934ad6bce4626704024e66dd59d1b111",
+  "sites": [
+    {
+      "key": "douban",
+      "name": "豆瓣导航",
+      "type": 3,
+      "api": "csp_Douban",
+      "searchable": 0,
+      "quickSearch": 0,
+      "filterable": 1,
+      "changeable": 1,
+      "indexs": 1,
+      "timeout": 30
+    },
+    {
+      "key": "ikanbot_fresh",
+      "name": "爱看机器人",
+      "type": 3,
+      "api": "csp_Ikanbot",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1,
+      "timeout": 120,
+      "ext": {
+        "webview": true
+      }
+    },
+    {
+      "key": "ivdy",
+      "name": "爱电影",
+      "type": 3,
+      "api": "csp_Ivdy",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1,
+      "timeout": 60
+    }
+  ],
+  "parses": []
+}

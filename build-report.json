@@ -1,8 +1,8 @@
 {
-  "jar_bytes": 181401,
-  "md5": "4c420eb0759d0f1703f5d3d34bc1ffdd",
+  "jar_bytes": 182631,
+  "md5": "934ad6bce4626704024e66dd59d1b111",
   "dex_version": "037",
-  "class_count": 339,
+  "class_count": 344,
   "entry_class": "com.github.catvod.spider.Ikanbot",
   "compile_stub_excluded": true,
   "jsoup_included": true,

@@ -14,20 +14,6 @@
       "timeout": 30
     },
     {
-      "key": "ikanbot_fresh",
-      "name": "爱看机器人",
-      "type": 3,
-      "api": "csp_Ikanbot",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1,
-      "timeout": 120,
-      "ext": {
-        "webview": true
-      }
-    },
-    {
       "key": "ivdy",
       "name": "爱电影",
       "type": 3,

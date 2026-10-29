@@ -1,5 +1,5 @@
 {
-  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/jar/box-91c19c170b12bd16fb74c018e6d4fc3c.jar;md5;91c19c170b12bd16fb74c018e6d4fc3c",
+  "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/jar/box-fbffe88372ab1166bb13e6f8e95fc701.jar;md5;fbffe88372ab1166bb13e6f8e95fc701",
   "sites": [
     {
       "key": "douban",
@@ -12,20 +12,6 @@
       "changeable": 1,
       "indexs": 1,
       "timeout": 30
-    },
-    {
-      "key": "ikanbot_fresh",
-      "name": "爱看机器人",
-      "type": 3,
-      "api": "csp_Ikanbot",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1,
-      "timeout": 120,
-      "ext": {
-        "webview": true
-      }
     },
     {
       "key": "ivdy",

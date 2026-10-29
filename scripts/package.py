@@ -48,10 +48,14 @@ config = {
                # indexs=1 让宿主把这一站当"导航站"：点卡片先进搜索/聚合页，而不是直接播第一个同名结果。
                # 手机版走 SearchActivity，电视版走 CollectActivity（都带 keyword）。不要删。
                "indexs": 1, "timeout": 30},
-              {"key": "ikanbot_fresh", "name": "爱看机器人", "type": 3,
-               "api": "csp_Ikanbot", "searchable": 1, "quickSearch": 1,
-               "filterable": 1, "changeable": 1, "timeout": 120,
-               "ext": {"webview": True}},
+              # 爱看机器人于 2026-10-30 暂停启用：手机上持续「一直转圈」，本机链路又无法复现，
+              # 原因未定位（HISTORY 第 8 节）。代码与入口类仍随 JAR 发布，只是不再出现在配置里。
+              # 恢复方式：把下面一段放回 sites 列表（key 必须是 ikanbot_fresh），并在
+              # scripts/verify_release.py 的 REQUIRED_APIS 里加回 'csp_Ikanbot'。
+              # {"key": "ikanbot_fresh", "name": "爱看机器人", "type": 3,
+              #  "api": "csp_Ikanbot", "searchable": 1, "quickSearch": 1,
+              #  "filterable": 1, "changeable": 1, "timeout": 120,
+              #  "ext": {"webview": True}},
               {"key": "ivdy", "name": "爱电影", "type": 3, "api": "csp_Ivdy", "searchable": 1,
                "quickSearch": 1, "filterable": 1, "changeable": 1, "timeout": 60}],
     "parses": []

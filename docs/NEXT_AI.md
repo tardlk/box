@@ -16,8 +16,8 @@
    docs/REFERENCES.md（宿主源码、站点定位词）、DEVELOPMENT.md / DOUBAN.md / IVDY.md（各站点实现）。
 
 现在有什么：
-- 一个 JAR 里三个站点：豆瓣导航（csp_Douban，导航站，indexs=1、searchable=0，排第一）、
-  爱看机器人（csp_Ikanbot）、爱电影（csp_Ivdy）。
+- 一个 JAR 里两个启用站点：豆瓣导航（csp_Douban，导航站，indexs=1、searchable=0，排第一）、
+  爱电影（csp_Ivdy）。爱看机器人（csp_Ikanbot）2026-10-30 起暂停启用，代码仍在。
 - 线上配置：https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json
 - 构建 bash build.sh；测试 bash test.sh（80 项契约检查）。
   实网开关：--live（爱看机器人）、--posters（封面）、--ivdy（爱电影）、--douban（豆瓣）。

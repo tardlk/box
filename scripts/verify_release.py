@@ -8,6 +8,9 @@ from urllib.parse import urlsplit
 from urllib.request import urlopen
 import zipfile
 
+# 当前启用的站点；启停站点时同步这里（HISTORY 第 8 节记录了爱看机器人的暂停）。
+REQUIRED_APIS = {'csp_Ivdy', 'csp_Douban'}
+
 
 def inspect(config, jar, checksum):
     jar_url, separator, expected = config['spider'].partition(';md5;')
@@ -17,7 +20,9 @@ def inspect(config, jar, checksum):
         raise ValueError('Downloaded JAR has a different MD5')
     apis = [site['api'] for site in config['sites']]
     keys = [site['key'] for site in config['sites']]
-    if not {'csp_Ikanbot', 'csp_Ivdy', 'csp_Douban'}.issubset(apis) or len(keys) != len(set(keys)):
+    # Keep this in step with the sites enabled in package.py: the point is to catch a site
+    # silently disappearing from a release. csp_Ikanbot paused 2026-10-30 (HISTORY 8).
+    if not REQUIRED_APIS.issubset(apis) or len(keys) != len(set(keys)):
         raise ValueError('Existing sites missing or site keys duplicated')
     with zipfile.ZipFile(io.BytesIO(jar)) as archive:
         dex = archive.read('classes.dex')

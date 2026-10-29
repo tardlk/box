@@ -1,5 +1,8 @@
 # 爱看机器人 `csp_Ikanbot` 实现说明
 
+> **该站点 2026-10-30 起暂停启用**（手机上一直转圈、原因未定位，见 [docs/HISTORY.md](docs/HISTORY.md) 第 8 节）。
+> 本文保留实现细节，供重新启用时参考。
+
 站点入口类 `com.github.catvod.spider.Ikanbot`，配置里写 `csp_Ikanbot`，站点 key 是 `ikanbot_fresh`。
 三个站点的整体状态、构建、发布流程见 [HANDOFF.md](HANDOFF.md)；本文只讲这个站点怎么实现的、哪些坑踩过。
 

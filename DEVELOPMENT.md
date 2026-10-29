@@ -1,6 +1,8 @@
 # box — FongMi 影视 5.x 插件
 
-本目录是本次新建的独立工程。运行入口为 `com.github.catvod.spider.Ikanbot`，
+本文保留初始实现及 2026-10-28 的验证记录；当前接手流程见 [HANDOFF.md](HANDOFF.md)。
+
+本目录为独立工程。运行入口为 `com.github.catvod.spider.Ikanbot`，
 爱看机器人配置类名为 **`csp_Ikanbot`**，爱电影为 **`csp_Ivdy`**。
 两者打包在同一个 JAR 中，配置保留原有爱看机器人站点 key。
 
@@ -12,7 +14,7 @@
 
 - `ikanbot.jar`：插件，包含 Jsoup；不依赖另一个爬虫 JAR。
 - `ikanbot.jar.md5`：本次产物的 MD5。
-- `config.json`：可导入影视的单站点配置。
+- `config.json`：可导入影视的双站点配置。
 - `build-report.json`、`verification.json`、`media-check.json`：构建和验证记录。
 
 把 `ikanbot.jar` 和 `config.json` 放在同一个可访问的 HTTP 目录中，

@@ -2,6 +2,14 @@
 
 FongMi 影视 5.x 配置与 Java 爬虫，包含「爱看机器人」和「爱电影」。
 
+## 给接手的 AI / 开发者
+
+先读 **[HANDOFF.md](HANDOFF.md)**。它汇总当前状态、源码位置、构建与发布步骤、测试边界及资料入口。
+
+- [JAR 编写指南与 SPI 返回格式](docs/JAR_GUIDE.md)
+- [资料索引：宿主源码、参考实现、官网文档](docs/REFERENCES.md)
+- [发布、校验和回滚](docs/RELEASING.md)
+
 ## 导入影视
 
 在设置 → 点播配置中填写固定地址：

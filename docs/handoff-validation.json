@@ -1,0 +1,49 @@
+{
+  "checked_on": "2026-10-29",
+  "timezone": "Asia/Shanghai",
+  "runtime_source_baseline_commit": "7484e1a44a6d34e30ce51f21cb230e614e825347",
+  "clean_build": {
+    "status": "passed",
+    "existing_build_cache_used": false,
+    "compiler": "JDK 17",
+    "android_platform": 30,
+    "build_tools": "35.0.0",
+    "dex_version": "037",
+    "class_count": 338,
+    "matches_published_dex": true,
+    "dex_sha256": "d63f96a39fc42aa539b0f2749ebca320174c6cd7d1ad6301dafd358eef2464b0"
+  },
+  "contract_tests": {
+    "ikanbot": 30,
+    "ivdy": 16,
+    "total_passed": 46
+  },
+  "release_tools": {
+    "stage_existing_artifact": "passed",
+    "stage_clean_build": "passed",
+    "verify_both_stages": "passed",
+    "reject_stale_expected_md5": "passed",
+    "reject_corrupt_jar": "passed",
+    "reject_missing_existing_site": "passed"
+  },
+  "published_artifact_check": {
+    "config_url": "https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json",
+    "expected_md5": "7b075ad627b2d5cbbfc29f253d3b3b1c",
+    "jar_bytes": 176622,
+    "status": "passed"
+  },
+  "documentation": {
+    "markdown_files_checked": 8,
+    "broken_local_links": 0,
+    "primary_source_refs_checked": [
+      "FongMi/TV@e3e81c27ec54d29689f4ef28cdeb9922f8fbc718",
+      "lushunming/AndroidCatVodSpider@c8ac5cde0fac21fb525d14d22f882bde00ebf7c4"
+    ]
+  },
+  "limits": {
+    "live_site_tests_rerun": false,
+    "android_device_connected": false,
+    "ivdy_playback_verified": false,
+    "note": "Documentation/tooling handoff. Historical site evidence remains dated 2026-10-28; current online JAR and config are retained."
+  }
+}

@@ -41,15 +41,16 @@ digest = hashlib.md5(target.read_bytes()).hexdigest()
 (root / "dist/ikanbot.jar.md5").write_text(digest + "\n")
 config = {
     "spider": "./ikanbot.jar;md5;" + digest,
-    "sites": [{"key": "ikanbot_fresh", "name": "爱看机器人", "type": 3,
+    # 站点顺序即首页 Tab 顺序，第一个是默认打开的分类页。
+    # 豆瓣放第一是仓库所有者的要求（2026-10-29）；它 searchable=0，不影响点卡片后的同名搜索取哪个站。
+    "sites": [{"key": "douban", "name": "豆瓣导航", "type": 3, "api": "csp_Douban",
+               "searchable": 0, "filterable": 1, "changeable": 1, "timeout": 30},
+              {"key": "ikanbot_fresh", "name": "爱看机器人", "type": 3,
                "api": "csp_Ikanbot", "searchable": 1, "quickSearch": 1,
                "filterable": 1, "changeable": 1, "timeout": 120,
                "ext": {"webview": True}},
               {"key": "ivdy", "name": "爱电影", "type": 3, "api": "csp_Ivdy", "searchable": 1,
-               "quickSearch": 1, "filterable": 1, "changeable": 1, "timeout": 60},
-              # 豆瓣只做导航：searchable=0，否则搜索出的 msearch 卡片会把用户送回搜索。
-              {"key": "douban", "name": "豆瓣导航", "type": 3, "api": "csp_Douban",
-               "searchable": 0, "filterable": 1, "changeable": 1, "timeout": 30}],
+               "quickSearch": 1, "filterable": 1, "changeable": 1, "timeout": 60}],
     "parses": []
 }
 (root / "dist/config.json").write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n")

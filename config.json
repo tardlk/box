@@ -2,6 +2,16 @@
   "spider": "https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/jar/box-4c420eb0759d0f1703f5d3d34bc1ffdd.jar;md5;4c420eb0759d0f1703f5d3d34bc1ffdd",
   "sites": [
     {
+      "key": "douban",
+      "name": "豆瓣导航",
+      "type": 3,
+      "api": "csp_Douban",
+      "searchable": 0,
+      "filterable": 1,
+      "changeable": 1,
+      "timeout": 30
+    },
+    {
       "key": "ikanbot_fresh",
       "name": "爱看机器人",
       "type": 3,
@@ -25,16 +35,6 @@
       "filterable": 1,
       "changeable": 1,
       "timeout": 60
-    },
-    {
-      "key": "douban",
-      "name": "豆瓣导航",
-      "type": 3,
-      "api": "csp_Douban",
-      "searchable": 0,
-      "filterable": 1,
-      "changeable": 1,
-      "timeout": 30
     }
   ],
   "parses": []

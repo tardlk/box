@@ -108,19 +108,23 @@ export JAVA_TOOL_OPTIONS="-Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=<端口>
 
 ### 5.4 设备验证环境（已固定，2026-10-30 决定）
 
-**以后需要跑 App 验证（点卡片、播视频、看落盘配置）一律用本机的 BlueStacks Air，不再用任何其它模拟器。**
-此前建的 Android Studio AVD（`boxtest` / `boxphone`）已删除，不要重建。
+**需要跑 App 验证（点卡片、播视频、看落盘配置）一律用本机的 BlueStacks Air，不要新建 AVD、不要换其它模拟器。**
+此前建的 `boxtest` / `boxphone` 两个 AVD 已删除。
 
 | 项 | 值 |
 |---|---|
-| 模拟器 | BlueStacks Air `5.21.790.7505`（`/Applications/BlueStacks.app`），Android 13 / arm64 |
-| root | 已 root，原位替换 `Contents/img/initrd_hvf.img`；Magisk `v27.2-kitsune-4`；`su -c id` → `uid=0` |
+| 模拟器 | BlueStacks Air `5.21.790.7505`，Android 13 / arm64 |
 | adb | `~/Library/Android/sdk/platform-tools/adb`，连 `127.0.0.1:5555` |
 | 封装脚本 | `~/bsroot/adb.sh`（本机 adb server 会被回收，脚本内自动重连；别直接调 adb） |
 
-细节、常用配方与全部踩坑记录见本机文档 `~/WorkBuddy/2026-10-29-15-05-12/AI_HANDOFF.md`。
-其中两条最容易踩：`sed`/`rm` 被 toybox shim 劫持后会**静默不生效**（必须 `/usr/bin/sed`、`/bin/rm`）；
-FongMi 的配置地址只能用 `config.json`，指向已删快照会表现成「首页空白且不报错」。
+环境已配好，直接用。操作配方（怎么改配置、怎么抓 `TV-*` 日志、怎么截图取坐标）
+见本机文档 `~/WorkBuddy/2026-10-29-15-05-12/AI_HANDOFF.md`。
+
+三条最容易踩的：`sed`/`rm` 被 toybox shim 劫持后会**静默不生效**（要用 `/usr/bin/sed`、`/bin/rm`）；
+FongMi 的配置地址只能用 `config.json`，指向已删快照会表现成「首页空白且不报错」；
+别在影视的输入框里敲 URL，它会把 `https://` 改成 `http://ttps://`。
+
+本机构建目前缺 `platforms/android-30` 与 `build-tools/35.0.0`（清理时删了），补这两样即可，不需要 emulator。
 
 ## 6. 发布
 

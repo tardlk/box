@@ -18,6 +18,7 @@
 | 7 | 2026-10-29 | 入口从 `v` 改回 `www` | `v` 跳到 `www1`，而 `www1` 在所有者网络里极慢 |
 | 8 | 2026-10-30 | **暂停启用爱看机器人** | 改完入口仍转圈，无法定位；先从配置里摘掉，代码保留 |
 | 9 | 2026-10-30 | 根因找到：请求带了站点 Referer | Cloudflare 见到 Referer 就 403；去掉后详情 0/6 → 6/6 |
+| 10 | 2026-10-30 | 端到端验收 | BlueStacks 上首页→详情→选集→播放全通；顺手记一个「快照被删会静默失效」的坑 |
 
 </br>
 
@@ -399,3 +400,52 @@ BlueStacks 上：豆瓣导航与爱电影正常，爱看机器人的**首页 24 
 第 4、7 节所有结论都建立在「本机经本地代理的链路」上，那条链路本身不稳，
 403 和超时混在一起，被当成同一个"站点抽风"。真正把问题分开的是一次干净的对照：
 **同一 URL、同一秒、只改请求头**。以后遇到"站点有时打得开有时打不开"，先做这个对照，不要先怀疑网络。
+
+## 10. 2026-10-30 10:15 端到端验收（BlueStacks / Android 13）
+
+### 10.1 环境与方法
+
+BlueStacks Air（Android 13、arm64-v8a、手机版影视 5.8.4）。这台机器**没有 root**，
+`su` 与 `run-as` 都不可用，所以配置只能用界面输入。
+
+一个绕不开的坑：这个应用会自行给输入框补 scheme——`input text 'https'` 落进去是 `http://ttps`。
+试过禁用输入法（`ime disable`）也一样，说明不是输入法的自动更正，是应用自己的逻辑。
+**规律是「首字符 h 被吃掉、前面补 http://」**，于是改成直接输 `h192.168.5.6:8899/config.json`，
+落进去正好是 `http://192.168.5.6:8899/config.json`。
+
+为了不动发布产物，本地只做了一件无害的事：把仓库里已发布的
+`jar/box-5d4df9465d4ec35bc519dcc83d1a9f50.jar` 原样拷到 `/tmp/bsstage`，
+配一份 spider 指向 `./box-5d4df946…jar` 的 config。**测的就是发布出去的那个 JAR 字节**，
+不是临时构建。
+
+### 10.2 结果：整条链路通
+
+| 环节 | 结果 |
+|---|---|
+| 配置加载 | `GET /config.json` + `GET /box-5d4df946….jar` 均 200；第三次启动只取 config（md5 命中，不重下） |
+| 首页 | `page=1, pagecount=1, limit=24`，24 条，封面全是 `img9.doubanio.com` 直连 |
+| 详情 | `directDetail` 成功，**没有触发 WebView 兜底**，8 条线路 |
+| 取址 | `{"parse":0,"url":"https://play.xluuss.com/play/egJxGgGd/index.m3u8",...}` |
+| 播放 | 点「正片」后正常出画面（西班牙片《黑球》的片头字幕） |
+
+修复前，同一台机器上是「首页正常、点详情进 WebView 兜底、`msg` 为空」。
+现在这条路径上没有兜底、没有异常，`Referer` 去掉就是分水岭。
+
+### 10.3 顺带发现的一个静默故障模式
+
+排查过程中配置一度指向 `config-20261029-www-entry.json`，而那份快照在 2026-10-30 的清理里被删了。
+表现是**首页空白、不报错**，日志里只有：
+
+```
+com.google.gson.JsonSyntaxException: MalformedJsonException: ... at line 1 column 5
+java.lang.IllegalArgumentException: Expected URL scheme 'http' or 'https' but no scheme was found
+```
+
+也就是「404 → 返回 HTML → 被当 JSON 解析 → 配置为空」。用户看到的就是"没有内容"。
+所以清理历史快照有代价：**任何人存了旧快照地址，配置会静默失效**。
+对外应始终给 `config.json`（永远存在），快照只用于回滚与临时对照。
+
+### 10.4 仍未验证
+
+- 真实电视盒子（非模拟器）上的 4K/1080p 解码与拖动。
+- 所有者手机上的最终确认——本次只在 BlueStacks 上验收。

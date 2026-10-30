@@ -25,7 +25,8 @@
   export JAVA_TOOL_OPTIONS="-Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=<端口> -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=<端口>"
   端口从 env | grep -i proxy 取。别把这个代理写进 SiteHttp 源码。
 - 设备验证固定用本机 BlueStacks Air（Android 13，环境已配好），不要新建 AVD 或换其它模拟器；
-  怎么改配置、怎么抓 TV-* 日志、怎么截图见 HANDOFF.md 第 5.4 节。
+  怎么改配置、怎么抓 TV-* 日志、怎么截图见 HANDOFF.md 第 5.4 节，细节在同机
+  ~/WorkBuddy/2026-10-29-15-05-12/AI_HANDOFF.md。
 
 最容易踩的几条（完整清单和原因见 HANDOFF.md 第 3 节）：
 - 豆瓣 indexs:1 / searchable:0 / 微信小程序 UA / 封面 @Referer= 后缀，都不能动。

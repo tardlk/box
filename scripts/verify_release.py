@@ -9,7 +9,7 @@ from urllib.request import urlopen
 import zipfile
 
 # 当前启用的站点；启停站点时同步这里（HISTORY 第 8 节记录了爱看机器人的暂停）。
-REQUIRED_APIS = {'csp_Ivdy', 'csp_Douban'}
+REQUIRED_APIS = {'csp_Ikanbot', 'csp_Ivdy', 'csp_Douban'}
 
 
 def inspect(config, jar, checksum):

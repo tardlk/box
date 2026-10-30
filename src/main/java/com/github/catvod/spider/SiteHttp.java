@@ -33,7 +33,10 @@ final class SiteHttp {
     }
 
     String get(String url) throws IOException {
-        HttpURLConnection connection = open(url, origin + "/");
+        // 不要给站点请求带 Referer。2026-10-30 逐组测过：只带 UA 或 UA+gzip 都是 200，
+        // 一旦加上 Referer: <站点自身> 就变成 403（Cloudflare 判定为可疑），换什么 Accept 组合都救不回来。
+        // 参考实现的爱看机器人.js 同样把 Referer 设为 null，只在播放请求里才补。
+        HttpURLConnection connection = open(url, null);
         try {
             URI uri = URI.create(url);
             synchronized (cookies) {
@@ -69,7 +72,7 @@ final class SiteHttp {
         connection.setConnectTimeout(8000);
         connection.setReadTimeout(15000);
         connection.setRequestProperty("User-Agent", userAgent);
-        connection.setRequestProperty("Referer", referer);
+        if (referer != null && !referer.trim().isEmpty()) connection.setRequestProperty("Referer", referer);
         connection.setRequestProperty("Accept-Encoding", "gzip");
         return connection;
     }

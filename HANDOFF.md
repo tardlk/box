@@ -10,8 +10,8 @@ FongMi 影视 5.x 的 Java 爬虫插件。一个 JAR 里装三个站点：豆瓣
 |---|---|
 | 仓库 | [tardlk/box](https://github.com/tardlk/box)，分支 `main` |
 | 导入地址（固定） | `https://gh-proxy.com/https://raw.githubusercontent.com/tardlk/box/main/config.json` |
-| 当前 JAR | `jar/box-fbffe88372ab1166bb13e6f8e95fc701.jar`（182398 字节） |
-| 当前发布快照 | `config-20261030-pause-ikanbot.json` |
+| 当前 JAR | `jar/box-5d4df9465d4ec35bc519dcc83d1a9f50.jar`（182430 字节） |
+| 当前发布快照 | `config-20261030-referer-fix.json` |
 | 契约检查 | 80 项（爱看机器人 35 + 爱电影 17 + 豆瓣 28） |
 
 JAR 是 Android 插件：Java 源码 → D8 生成 `classes.dex` → 装进扩展名为 `.jar` 的 ZIP。
@@ -19,17 +19,15 @@ JAR 是 Android 插件：Java 源码 → D8 生成 `classes.dex` → 装进扩�
 
 | 站点 key | 入口类 | 状态 |
 |---|---|---|
-| `douban` | `csp_Douban` | 启用。导航站，`indexs:1`、`searchable:0`，排第一位 |
-| `ivdy` | `csp_Ivdy` | 启用。匿名 API + 客户端签名 |
-| ~~`ikanbot_fresh`~~ | `csp_Ikanbot` | **2026-10-30 暂停启用**：手机上一直转圈、原因未定位，已从配置移除，代码仍随 JAR 发布。恢复步骤见 [HISTORY 第 8 节](docs/HISTORY.md) |
-
-爱看机器人停用后，豆瓣导航点卡片搜同名时只剩「爱电影」一个源可选（豆瓣自身 `searchable:0` 不参与）。
+| `douban` | `csp_Douban` | 导航站，`indexs:1`、`searchable:0`，排第一位 |
+| `ikanbot_fresh` | `csp_Ikanbot` | 爱看机器人，HTML + 资源接口，可选 WebView 后备 |
+| `ivdy` | `csp_Ivdy` | 爱电影，匿名 API + 客户端签名 |
 
 ## 2. 当前状态
 
 已验证的（有记录，但不等于本轮重测）：
 
-- **爱看机器人：已暂停启用（2026-10-30）。** 代码仍在、本机 `--live` 与 `--posters` 能通过，但所有者手机上一直转圈，原因未定位。相关记录见 HISTORY 第 3、4、6、7、8 节——读的时候注意：这些都是「本机链路」的结论，不代表真实网络。
+- 爱看机器人：首页/分类/搜索/详情/HLS 实网通过；详情曾因带 Referer 被 Cloudflare 判成 403，已修（HISTORY 第 9 节）。所有者手机上此前一直转圈，修复后待其确认。
 - 爱电影：五个分类、筛选、分页、搜索、电影与剧集详情、封面、选集、取址全部通过；HLS 清单验证通过；**所有者确认设备可播放**；默认取最高画质。
 - 豆瓣导航：七个分类、筛选、Top250 翻页、封面直连通过；**所有者确认点卡片进搜索页并可选源**。
 
@@ -46,8 +44,6 @@ JAR 是 Android 插件：Java 源码 → D8 生成 `classes.dex` → 装进扩�
 - 站点与部分图床在本机会间歇性「返回 200 但正文传到一半不收尾」。这是链路问题，不是解析 bug；别为了绕它去改超时然后声称验证过。
 
 ## 3. 硬约束
-
-下面 4、5 两条只在重新启用爱看机器人时才有意义；其余与站点无关。
 
 1. **豆瓣配置里的 `indexs: 1` 不能删。** 宿主靠它把点卡片变成「进搜索页」；手机版进 `SearchActivity`，电视版进 `CollectActivity`。删了就退化成自动播第一个同名结果。
 2. **豆瓣接口只认微信小程序 UA。** 换普通浏览器 UA 返回 400 / `code 997`。见 `Douban.UA`。

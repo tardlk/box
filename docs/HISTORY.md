@@ -17,6 +17,7 @@
 | 6 | 2026-10-29 | 封面改回豆瓣直连 | 站点代理境外且不稳，改直连豆瓣；`--posters` 10/10 |
 | 7 | 2026-10-29 | 入口从 `v` 改回 `www` | `v` 跳到 `www1`，而 `www1` 在所有者网络里极慢 |
 | 8 | 2026-10-30 | **暂停启用爱看机器人** | 改完入口仍转圈，无法定位；先从配置里摘掉，代码保留 |
+| 9 | 2026-10-30 | 根因找到：请求带了站点 Referer | Cloudflare 见到 Referer 就 403；去掉后详情 0/6 → 6/6 |
 
 </br>
 
@@ -353,3 +354,48 @@ DNS 卡住、还是宿主根本没把请求发出去。
 3. 怀疑 Cloudflare 按 TLS 指纹/UA 拦截时，用同样的 UA 和 TLS 参数从浏览器复现，再对比 Java 的请求。
 4. 恢复步骤：`scripts/package.py` 里那段被注释的站点定义放回 `sites` 列表，
    `scripts/verify_release.py` 的 `REQUIRED_APIS` 加回 `'csp_Ikanbot'`，然后走一次配置发布（JAR 不用重打）。
+
+## 9. 2026-10-30 根因：给站点请求带 Referer 会被 Cloudflare 拦成 403
+
+第 8 节暂停站点之后，仓库所有者装了 BlueStacks Air 继续排查。
+在 Android 13 的真实运行环境里终于拿到了一直缺的那条错误。
+
+### 9.1 怎么找到的
+
+BlueStacks 上：豆瓣导航与爱电影正常，爱看机器人的**首页 24 条、海报全出**，但点进详情触发了 WebView 兜底，
+日志里是 `{"list":[],"url":"","msg":"爱看机器人：null"}` —— 一个 message 为 null 的异常。
+先把 `error()` 改成「没有 message 时输出异常类型」，再回头查直接请求那一步，桌面探针给出：
+
+```
+站点要求网页验证（HTTP 403）
+```
+
+而同一秒、同一 IP 用 curl 请求同一个 URL 是 **200**。于是逐组加头对照：
+
+| 请求头 | 结果 |
+|---|---|
+| 只带 UA | **3/3 200** |
+| UA + `Accept-Encoding: gzip` | **3/3 200** |
+| UA + `Referer: https://www.ikanbot.com/` | **0/3，全 403** |
+| UA + Referer + gzip（就是我们当时的实现） | **0/3，全 403** |
+| 再加浏览器 `Accept`、`Accept-Language` | **仍然 403** |
+
+**只要带上站点自己的 Referer，就必被拦。** 用 `SiteHttp` 连打 6 次验证：改前 6/6 全是 403，改后 6/6 全部 200。
+
+参考实现 `爱看机器人.js` 里那句 `Referer: null` 的注释（"null 避免 drpy3 自动补入 Referer"）原来就是这个意思，
+它在 `play` 里才给媒体请求补 Referer。这一条我们没照做，`SiteHttp.get()` 一直在发 `Referer: origin + "/"`。
+
+### 9.2 改动
+
+- `SiteHttp.get()` 不再给站点请求设 Referer；`open(url, referer)` 在 referer 为空时跳过该头。
+  播放请求（`playerContent` 返回的 header）照旧带 Referer，不受影响。
+- `Ikanbot.error()`：异常没有 message 时输出异常类型，不再显示"爱看机器人：null"这种废话。
+
+契约检查 80 项通过；`directDetail("1023899")` 返回 28 条线路与真实 m3u8；
+`--posters` 仍是 10/10。
+
+### 9.3 为什么绕了这么久
+
+第 4、7 节所有结论都建立在「本机经本地代理的链路」上，那条链路本身不稳，
+403 和超时混在一起，被当成同一个"站点抽风"。真正把问题分开的是一次干净的对照：
+**同一 URL、同一秒、只改请求头**。以后遇到"站点有时打得开有时打不开"，先做这个对照，不要先怀疑网络。

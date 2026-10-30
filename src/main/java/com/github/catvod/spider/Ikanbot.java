@@ -235,7 +235,10 @@ public final class Ikanbot extends Spider {
     private static String encode(String value) throws Exception { return URLEncoder.encode(value, "UTF-8"); }
 
     private static String error(Exception failure) {
-        try { return new JSONObject().put("list", new JSONArray()).put("url", "").put("msg", "爱看机器人：" + failure.getMessage()).toString(); }
+        // 空 message 的异常（典型是 NPE）以前会显示成"爱看机器人：null"，等于什么都没说。
+        String detail = failure.getMessage();
+        if (detail == null || detail.trim().isEmpty()) detail = failure.getClass().getSimpleName();
+        try { return new JSONObject().put("list", new JSONArray()).put("url", "").put("msg", "爱看机器人：" + detail).toString(); }
         catch (Exception ignored) { return "{\"list\":[],\"msg\":\"爱看机器人请求失败\"}"; }
     }
 }

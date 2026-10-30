@@ -120,11 +120,13 @@ export JAVA_TOOL_OPTIONS="-Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=<端口>
 环境已配好，直接用。操作配方（怎么改配置、怎么抓 `TV-*` 日志、怎么截图取坐标）
 见本机文档 `~/WorkBuddy/2026-10-29-15-05-12/AI_HANDOFF.md`。
 
-三条最容易踩的：`sed`/`rm` 被 toybox shim 劫持后会**静默不生效**（要用 `/usr/bin/sed`、`/bin/rm`）；
+三条最容易踩的：`sed`/`rm`/`grep` 被 toybox shim 劫持后会**静默不生效**（`grep` 还不支持 `\|` 交替，
+要用 `/usr/bin/sed`、`/bin/rm`、`/usr/bin/grep -E`）；
 FongMi 的配置地址只能用 `config.json`，指向已删快照会表现成「首页空白且不报错」；
 别在影视的输入框里敲 URL，它会把 `https://` 改成 `http://ttps://`。
 
-本机构建目前缺 `platforms/android-30` 与 `build-tools/35.0.0`（清理时删了），补这两样即可，不需要 emulator。
+本机构建链已齐（JDK 17 + `platforms/android-30` + `build-tools/35.0.0`，不含 emulator）；
+SDK 若被删，补两个 zip 即可，地址与「目录名和版本号不一致」的坑见本机文档第 5 节。
 
 ## 6. 发布
 

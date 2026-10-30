@@ -106,6 +106,22 @@ export JAVA_TOOL_OPTIONS="-Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=<端口>
 不给就会看到 `Remote host terminated the handshake`——那是网络路径问题，**不要改插件代码**。
 端口从 `env | grep -i proxy` 取当前值。安卓真机用设备自己的网络，不要把代理写进 `SiteHttp`。
 
+### 5.4 设备验证环境（已固定，2026-10-30 决定）
+
+**以后需要跑 App 验证（点卡片、播视频、看落盘配置）一律用本机的 BlueStacks Air，不再用任何其它模拟器。**
+此前建的 Android Studio AVD（`boxtest` / `boxphone`）已删除，不要重建。
+
+| 项 | 值 |
+|---|---|
+| 模拟器 | BlueStacks Air `5.21.790.7505`（`/Applications/BlueStacks.app`），Android 13 / arm64 |
+| root | 已 root，原位替换 `Contents/img/initrd_hvf.img`；Magisk `v27.2-kitsune-4`；`su -c id` → `uid=0` |
+| adb | `~/Library/Android/sdk/platform-tools/adb`，连 `127.0.0.1:5555` |
+| 封装脚本 | `~/bsroot/adb.sh`（本机 adb server 会被回收，脚本内自动重连；别直接调 adb） |
+
+细节、常用配方与全部踩坑记录见本机文档 `~/WorkBuddy/2026-10-29-15-05-12/AI_HANDOFF.md`。
+其中两条最容易踩：`sed`/`rm` 被 toybox shim 劫持后会**静默不生效**（必须 `/usr/bin/sed`、`/bin/rm`）；
+FongMi 的配置地址只能用 `config.json`，指向已删快照会表现成「首页空白且不报错」。
+
 ## 6. 发布
 
 完整步骤见 [docs/RELEASING.md](docs/RELEASING.md)。要点：
